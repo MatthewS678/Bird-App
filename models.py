@@ -14,10 +14,32 @@ def get_time():
     return datetime.datetime.utcnow()
 
 
-### Define your table below
-#
-# db.define_table('thing', Field('name'))
-#
-## always commit your models to avoid problems later
+#tables to mimic csv file data
+db.define_table(
+    'checklists',
+    Field('latitude', 'double' ),
+    Field('longitude', 'double'),
+    Field('observation_day', 'date', default=datetime.date.today),
+    Field('observation_time', 'time'),
+    Field('observer_id', 'string'),
+    Field('duration_minutes', 'integer')
+)
+
+db.define_table(
+    'sightings',
+    Field('common_name', 'string' ),
+    Field('observation_count', 'integer')
+)
+
+db.define_table(
+    'species',
+    Field('common_name', 'string' ),
+)
+
+db.define_table(
+    'checklists_sightings',
+    Field('sightings_id', 'reference sightings' ),
+    Field('sampling_event', 'string') #should link checklists and sightings
+)
 
 db.commit()
