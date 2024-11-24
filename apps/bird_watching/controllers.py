@@ -39,10 +39,21 @@ def index():
     return dict(
         # COMPLETE: return here any signed URLs you need.
         my_callback_url = URL('my_callback', signer=url_signer),
+        get_species_url = URL('get_species', signer=url_signer),
     )
+
+
 
 @action('my_callback')
 @action.uses() # Add here things like db, auth, etc.
 def my_callback():
     # The return value should be a dictionary that will be sent as JSON.
     return dict(my_value=3)
+
+@action('get_species')
+@action.uses(db)
+def get_species():
+    species = db(db.species).select(db.species.common_name).as_list()
+    checklists = db(db.checklists).select().as_list()
+    sightings = db(db.sightings).select().as_list()
+    return dict(species=species, checklists=checklists, sightings=sightings)
