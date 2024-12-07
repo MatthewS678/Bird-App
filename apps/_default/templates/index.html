@@ -9,6 +9,19 @@
 
 <div class="section" id="app" v-cloak>
   <!-- Put here your Vue.js template -->
+
+  <div class="navbar">
+    <!-- Links to the other pages -->
+    <div>
+      <a href="/birds/checklist">Edit Checklists</a> <!-- Link to checklist page/controller-->
+      <a href="/birds/user_statistics">Sighting Statistics</a> <!-- Link to user stats page/controller-->
+    </div>
+    <!-- Species searchbar -->
+    <div>
+      <input type="text" id="species-searchbar" placeholder="Select species..." autocomplete="off">
+    </div>
+  </div>
+
   <h1 class="title"><i class="fa-solid fa-cube"></i> Title</h1>
   <p>Content: my_value: {{my_value}} </p>
 </div>
