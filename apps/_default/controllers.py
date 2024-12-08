@@ -31,6 +31,8 @@ from .common import db, session, T, cache, auth, logger, authenticated, unauthen
 from py4web.utils.url_signer import URLSigner
 from .models import get_user_email
 
+GOOGLE_MAPS_API_KEY = 'AIzaSyBaLGcjO6a4vfgZSMXeozjhuFB5zQ1YyZo'
+
 url_signer = URLSigner(session)
 
 @action('index')
@@ -40,9 +42,10 @@ def index():
         # COMPLETE: return here any signed URLs you need.
         my_callback_url = URL('my_callback', signer=url_signer),
         get_species_url = URL('get_species', signer=url_signer),
+        checklist_url = URL('checklist', signer=url_signer),
+        user_stats_url = URL('user_stats', signer=url_signer),
+        GOOGLE_MAPS_API_KEY = GOOGLE_MAPS_API_KEY
     )
-
-
 
 @action('my_callback')
 @action.uses() # Add here things like db, auth, etc.

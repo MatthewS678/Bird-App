@@ -8,8 +8,7 @@ let app = {};
 app.data = {    
     data: function() {
         return {
-            // Complete as you see fit.
-            my_value: 1, // This is an example.
+            position : {lat: 0, lng: 0},
         };
     },
     methods: {
@@ -18,8 +17,36 @@ app.data = {
             // This is an example.
             this.my_value += 1;
         },
+
+        update_positions: function(lat, lng) {
+            this.position.lat = lat;
+            this.position.lng = lng;
+        }
+
     }
 };
+
+let map;
+async function initMap() {
+    const { Map } = await google.maps.importLibrary("maps");
+    map = new Map(document.getElementById("map"), {
+        center: { lat: 0, lng: 0 },
+        zoom: 10,
+    });
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+            let lat = position.coords.latitude;
+            let lng = position.coords.longitude;
+            app.vue.update_positions(lat, lng);
+            map.setCenter({lat: lat, lng: lng});
+        })
+    }
+
+
+}
+
+initMap();
 
 app.vue = Vue.createApp(app.data).mount("#app");
 
