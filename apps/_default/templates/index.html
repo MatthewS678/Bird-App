@@ -13,8 +13,8 @@
   <div class="navbar">
     <!-- Links to the other pages -->
     <div>
-      <a href="checklist_url">My Checklists</a> <!-- Link to checklist page/controller-->
-      <a href="user_stats_url">Sighting Statistics</a> <!-- Link to user stats page/controller-->
+      <a href="[[=URL('my_checklists')]]">My Checklists</a> <!-- Link to checklist page/controller-->
+      <a href="[[=URL('user_stats')]]">Sighting Statistics</a> <!-- Link to user stats page/controller-->
     </div>
     <!-- Species searchbar -->
     <div>
@@ -34,7 +34,8 @@
 <script>
   let my_callback_url = "[[=XML(my_callback_url)]]";
   let get_species_url = "[[=XML(get_species_url)]]";
-  let checklist_url = "[[=XML(checklist_url)]]";
+  let add_checklist_url = "[[=XML(add_checklist_url)]]";
+  let my_checklists_url = "[[=XML(add_checklist_url)]]";
   let user_stats_url = "[[=XML(user_stats_url)]]";
 </script>
 <script>
