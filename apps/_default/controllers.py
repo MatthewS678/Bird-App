@@ -29,7 +29,7 @@ from py4web import action, request, abort, redirect, URL
 from yatl.helpers import A
 from .common import db, session, T, cache, auth, logger, authenticated, unauthenticated, flash
 from py4web.utils.url_signer import URLSigner
-from .models import get_user_email
+from .models import get_user_email, get_user_id
 
 url_signer = URLSigner(session)
 
@@ -39,7 +39,11 @@ def index():
     return dict(
         # COMPLETE: return here any signed URLs you need.
         my_callback_url = URL('my_callback', signer=url_signer),
+        add_checklist_url = URL('add_checklist', signer=url_signer),
         get_species_url = URL('get_species', signer=url_signer),
+        user_stats_url = URL('user_stats', signer=url_signer),
+        my_checklists = URL('my_checklists', signer=url_signer),
+        
     )
 
 
@@ -54,6 +58,18 @@ def my_callback():
 @action.uses(db)
 def get_species():
     species = db(db.species).select(db.species.common_name).as_list()
-    checklists = db(db.checklists).select().as_list()
+    
     sightings = db(db.sightings).select().as_list()
-    return dict(species=species, checklists=checklists, sightings=sightings)
+    return dict(species=species, sightings=sightings)
+
+@action('add_checklist/')
+@action.uses('add_checklist.html') 
+def checklist():
+    return dict()
+
+@action('my_checklists')
+@action.uses('my_checklists') 
+def checklist():
+    checklists = db(db.checklists.observer_id == get_user_id()).select().as_list()
+    return dict(checklists)
+
