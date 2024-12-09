@@ -68,8 +68,8 @@ def checklist():
     position = request.json.get('position') # position = {lat: lat_val, lng: lng_val}
     id = db.checklists.insert()
     checklist = db(db.checklists.id == id).select().first()
-    checklist.update_record(latitude=position.lat)
-    checklist.update_record(longitude=position.lng)
+    checklist.update_record(latitude=position["lat"])
+    checklist.update_record(longitude=position["lng"])
     return dict(checklist=checklist)
 
 @action('my_checklists')
