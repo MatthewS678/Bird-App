@@ -64,10 +64,15 @@ def get_species():
     sightings = db(db.sightings).select().as_list()
     return dict(species=species, sightings=sightings)
 
-@action('add_checklist/')
+@action('add_checklist/', method='POST')
 @action.uses('add_checklist.html') 
 def checklist():
-    return dict()
+    position = request.json.get('position') # position = {lat: lat_val, lng: lng_val}
+    id = db.checklists.insert()
+    checklist = db(db.checklists.id == id).select().first()
+    checklist.update_record(latitude=position.lat)
+    checklist.update_record(longitude=position.lng)
+    return dict(checklist=checklist)
 
 @action('my_checklists')
 @action.uses('my_checklists') 

@@ -1,3 +1,5 @@
+import { get_position } from 'js/index.js'
+
 "use strict";
 
 // This will be the object that will contain the Vue attributes
