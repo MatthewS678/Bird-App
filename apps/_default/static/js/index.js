@@ -17,7 +17,7 @@ app.data = {
             this.map_center_pos = position;
         },
 
-        update_marker_position: function(position) {
+        add_checklist: function(position) {
             axios.post(add_checklist_url, {
                 position: position
             }).then(() => {
@@ -63,7 +63,7 @@ async function initMap() {
 
         marker.addListener("click", () => {
             var position = { lat: marker.position.lat, lng: marker.position.lng };
-            app.data.methods.update_marker_position(position);
+            app.data.methods.add_checklist(position);
             marker.position = null; // remove marker when clicked
         })
     });
