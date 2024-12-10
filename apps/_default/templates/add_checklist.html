@@ -1,13 +1,72 @@
 [[extend 'layout.html']]
 
-<style>
-    [v-cloak] {
-         display: none;
-    }
-</style>
+<div class="section" id="app">
+    <div class="columns is-centered">
+        <div class="column is-three-quarters">
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-header-title">Add Checklist</p>
+                </div>
+                <div class="card-content">
+                    <div class="pb-5">
+                        <p class="title is-5">Coordinates</p>
+                        <div class="columns">
+                            <div class="column">
+                                 <input name="latitude" class="input" type="number" placeholder="Latitude" v-model="latitude">
+                            </div>   
+                            <div class="column">
+                                <input name="longitude" class="input" type="number" placeholder="Longitude" v-model="longitude">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pb-5">
+                        <p class="title is-5">Observation Date</p>
+                        <input name="observation_date" class="input" type="date" v-model="observation_date">
+                    </div>
+                    <div class="pb-5">
+                        <p class="title is-5">Time</p>
+                        <input name="time" class="input" type="time" v-model="time_started">
+                    </div>
+                    <div class="pb-5">
+                        <p class="title is-5">Duration (Minutes)</p>
+                        <input name="duration" class="input" type="number" v-model="observation_duration">
+                    </div>
+                    <p class="title is-5">Sightings</p>
+                    <div class="pb-5" v-for="(sighting, s_index) in sightings">
+                        <div class="columns">
+                            <div class="column">
+                                <input name="species_name" class="input" v-model="sighting.species_name" placeholder="Species">
+                            </div>
+                            <div class="column">
+                                <input name="species_name" class="input" v-model="sighting.observation_count" placeholder="Species">
+                            </div>
+                            <div class="column is-one-fourth">
+                                <button class="button is-success" @click="increment(s_index)">+</button>
+                                <button class="button is-danger" @click="decrement(s_index)">-</button>
+                                <button class="button trash is-narrow" @click="delete_sighting(s_index)"><i class="trash has-text-danger fa fa-trash"></i></button>
+                                
+                            </div>
+                        </div>
+                        
+                    </div>
 
-<div class="section" id="app" v-cloak>
-    
+                    <div class="">
+                        <button class="button is-success" @click="add_sighting()">+ Add Sighting</button>
+                    </div>
+                    <br>
+                    <button class="button is-success" @click="submit_checklist_sightings()">Submit</button>
+                </div>
+                
+            </div>
+            
+        </div>
+    </div>
 </div>
-
+[[block page_scripts]]
+<script>
+    let get_species_url = "[[=XML(get_species_url)]]";
+    let latitude = JSON.parse('[[=XML(latitude)]]') || 0;
+    let longitude = JSON.parse('[[=XML(longitude)]]') || 0;
+  </script>
 <script src="js/add_checklist.js"></script>
+[[end]]

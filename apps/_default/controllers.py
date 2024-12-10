@@ -25,13 +25,20 @@ session, db, T, auth, and tempates are examples of Fixtures.
 Warning: Fixtures MUST be declared with @action.uses({fixtures}) else your app will result in undefined behavior
 """
 
+<<<<<<< HEAD
 from pprint import pprint
 import json
 from py4web import action, request, abort, redirect, URL, HTTP
+=======
+import json
+from py4web import action, request, abort, redirect, URL
+>>>>>>> 66110b5 (progress on add checklist pages, still need to add to db)
 from yatl.helpers import A
 from .common import db, session, T, cache, auth, logger, authenticated, unauthenticated, flash
 from py4web.utils.url_signer import URLSigner
 from .models import get_user_email, get_user_id
+from py4web.utils.form import Form, FormStyleBulma, TextareaWidget, FormStyleDefault
+from py4web.utils.grid import Grid, GridClassStyleBulma, Column
 
 GOOGLE_MAPS_API_KEY = 'REDACTED'
 
@@ -46,7 +53,7 @@ def index():
         add_checklist_url = URL('add_checklist', signer=url_signer),
         get_species_url = URL('get_species', signer=url_signer),
         user_stats_url = URL('user_stats', signer=url_signer),
-        my_checklists = URL('my_checklists', signer=url_signer),
+        my_checklists_url = URL('my_checklists', signer=url_signer),
         
     )
 
@@ -60,23 +67,43 @@ def my_callback():
 @action.uses(db)
 def get_species():
     species = db(db.species).select(db.species.common_name).as_list()
-    
-    sightings = db(db.sightings).select().as_list()
-    return dict(species=species, sightings=sightings)
+    return dict(species=species)
 
-@action('add_checklist/', method='POST')
-@action.uses('add_checklist.html') 
+@action('add_checklist/')
+@action.uses('add_checklist.html', auth.user) 
 def checklist():
-    position = request.json.get('position') # position = {lat: lat_val, lng: lng_val}
-    id = db.checklists.insert()
-    checklist = db(db.checklists.id == id).select().first()
-    checklist.update_record(latitude=position["lat"])
-    checklist.update_record(longitude=position["lng"])
-    return dict(checklist=checklist)
+    latitude = request.params.get('latitude')
+    longitude = request.params.get('longitude')
+    return dict(get_species_url = URL('get_species', signer=url_signer), 
+                latitude=json.dumps(latitude),
+                longitude=json.dumps(longitude))
 
 @action('my_checklists')
-@action.uses('my_checklists') 
-def checklist():
-    checklists = db(db.checklists.observer_id == get_user_id()).select().as_list()
-    return dict(checklists)
+@action('my_checklists/<path:path>', method=['POST', 'GET'])
+@action.uses('my_checklists.html', auth.user) 
+def my_checklist(path=None):
+    # checklists = db(db.checklists.observer_id == get_user_id()).select().as_list()
+    def species_for_event(row):
+        species = db(db.sightings.sampling_event == row.sampling_event).select(db.sightings.common_name)
+        return ', '.join(s.common_name for s in species) if species else 'None'
+    grid = Grid(path,
+                grid_class_style=GridClassStyleBulma,
+                formstyle=FormStyleBulma,
+                query=db.checklists.observer_id == get_user_email(),
+                create=False,
+                columns=[
+                    db.checklists.sampling_event,
+                    db.checklists.latitude,
+                    db.checklists.longitude,
+                    db.checklists.observation_date,
+                    db.checklists.time_started,
+                    db.checklists.duration_minutes,
+                    Column(
+                        "Species",
+                        species_for_event,
+                    )
+                ],
+                orderby=[~db.checklists.id],
+                )
+    return dict(grid=grid)
 
