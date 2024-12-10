@@ -83,7 +83,7 @@ def add_checklist_sightings():
         "longitude" : request.json.get("longitude"),
         "observation_date" : request.json.get("observation_date"),
         "time_started" : request.json.get("time_started"),
-        "duration_minutes" : request.json.get("duration_duration"),
+        "duration_minutes" : request.json.get("observation_duration"),
         "observer_id" : get_user_email()
     }
     
