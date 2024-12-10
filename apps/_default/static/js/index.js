@@ -18,11 +18,12 @@ app.data = {
         },
 
         add_checklist: function(position) {
-            axios.post(add_checklist_url, {
-                position: position
-            }).then(() => {
-                this.marker_pos = position;
-            });
+            // axios.post(add_checklist_url, {
+            //     position: position
+            // }).then(() => {
+            //     this.marker_pos = position;
+            // });
+            window.location.href = "/add_checklist?latitude=" + position.lat +"&longitude=" + position.lng  
         }
 
     }
@@ -33,7 +34,7 @@ async function initMap() {
     const { Map } = await google.maps.importLibrary("maps");
     const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
     map = new Map(document.getElementById("map"), {
-        center: { lat: 0, lng: 0 },
+        center: { lat: 36.97376596436481, lng: -122.03073866623154 },   //Santa Cruz Coordinates
         zoom: 10,
         mapId: "6ccc43bc2603356d"
     });
@@ -48,7 +49,12 @@ async function initMap() {
 
     let marker;
     map.addListener("click", (e) => {
-        if (marker) marker.position = null  // remove previous marker if present
+        console.log(marker)
+        if (marker && marker.position) {
+            marker.position = null  // remove previous marker if present
+            return
+        }
+            
 
         let content = document.createElement("div");
 
@@ -63,6 +69,7 @@ async function initMap() {
 
         marker.addListener("click", () => {
             var position = { lat: marker.position.lat, lng: marker.position.lng };
+            console.log(position)
             app.data.methods.add_checklist(position);
             marker.position = null; // remove marker when clicked
         })

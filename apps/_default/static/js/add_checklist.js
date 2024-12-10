@@ -12,9 +12,9 @@ app.data = {
             sightings:[],
             latitude: latitude || 0,
             longitude: longitude || 0,
-            observation_date: "",
-            time_started: "",
-            observation_duration: ""
+            observation_date: null,
+            time_started: null,
+            observation_duration: null
         };
     },
     methods: {
@@ -25,7 +25,22 @@ app.data = {
             })
         },
         submit_checklist_sightings: function() {
-            console.log(this)
+            let checklist_data = {
+                sightings: this.sightings,
+                latitude: this.latitude,
+                longitude: this.longitude,
+                observation_date: this.observation_date,
+                time_started: this.time_started,
+                observation_duration: this.observation_duration
+            }
+            axios.post(add_checklist_sightings_url, checklist_data)
+            .then(function (r) {
+                window.location.href = "/my_checklists"
+                console.log(r.data)
+            })
+            .catch(function(r) {
+                alert("Error adding checklist/sightings")
+            })
         },
         delete_sighting: function(s_index) {
             this.sightings.splice(s_index,1)
@@ -44,10 +59,9 @@ app.data = {
 app.vue = Vue.createApp(app.data).mount("#app");
 
 app.load_data = function () {
-    console.log("test")
-    axios.get(get_species_url).then(function (r) {
-        console.log(r.data)
-    });
+    // axios.get(get_species_url).then(function (r) {
+    //     console.log(r.data)
+    // });
 }
 
 app.load_data();
