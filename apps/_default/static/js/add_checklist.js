@@ -14,7 +14,8 @@ app.data = {
             longitude: longitude || 0,
             observation_date: null,
             time_started: null,
-            observation_duration: null
+            observation_duration: null,
+            species: []
         };
     },
     methods: {
@@ -59,9 +60,10 @@ app.data = {
 app.vue = Vue.createApp(app.data).mount("#app");
 
 app.load_data = function () {
-    // axios.get(get_species_url).then(function (r) {
-    //     console.log(r.data)
-    // });
+    axios.get(get_species_url).then(function (r) {
+        app.vue.species = r.data.species
+        console.log(app.vue.species)
+    });
 }
 
 app.load_data();

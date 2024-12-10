@@ -60,7 +60,7 @@ def my_callback():
 @action('get_species')
 @action.uses(db)
 def get_species():
-    species = db(db.species).select(db.species.common_name).as_list()
+    species = [row.common_name for row in db(db.species).select(db.species.common_name, orderby=db.species.common_name)]
     return dict(species=species)
 
 @action('add_checklist/')
@@ -83,7 +83,7 @@ def add_checklist_sightings():
         "longitude" : request.json.get("longitude"),
         "observation_date" : request.json.get("observation_date"),
         "time_started" : request.json.get("time_started"),
-        "duration_minutes" : request.json.get("duration_minutes"),
+        "duration_minutes" : request.json.get("duration_duration"),
         "observer_id" : get_user_email()
     }
     

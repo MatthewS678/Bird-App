@@ -1,5 +1,19 @@
 [[extend 'layout.html']]
 
+<head>
+    <style>
+        /* Custom CSS for truncating select options */
+        select {
+            width: 200px; /* You can adjust the width */
+        }
+
+        select option {
+            white-space: nowrap;      /* Prevent text from wrapping */
+            overflow: hidden;         /* Hide overflow */
+            text-overflow: ellipsis;  /* Add ellipsis to the overflow text */
+        }
+    </style>
+</head>
 <div class="section" id="app">
     <div class="columns is-centered">
         <div class="column is-three-quarters">
@@ -35,7 +49,12 @@
                     <div class="pb-5" v-for="(sighting, s_index) in sightings">
                         <div class="columns">
                             <div class="column">
-                                <input name="species_name" class="input" v-model="sighting.species_name" placeholder="Species">
+                                <!-- <input name="species_name" class="input" v-model="sighting.species_name" placeholder="Species"> -->
+                                <div class="select">
+                                    <select v-model="sighting.species_name">
+                                      <option v-for="common_name in species">{{common_name}}</option>
+                                    </select>
+                                  </div>
                             </div>
                             <div class="column">
                                 <input name="species_name" class="input" v-model="sighting.observation_count" placeholder="Species">
