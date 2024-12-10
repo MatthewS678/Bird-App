@@ -76,7 +76,7 @@ if db(db.sightings).isempty():
         for row in reader:
             #Same thing with duration minutes, idk why theres an X in the csv
             #There are also over 100,000 sightings so this one may take some time
-            observation_count = row['OBSERVATION COUNT'] if row['OBSERVATION COUNT'] != 'X' else 0
+            observation_count = row['OBSERVATION COUNT'] if row['OBSERVATION COUNT'] != 'X' else 1
             db.sightings.insert(
                 sampling_event=row['SAMPLING EVENT IDENTIFIER'],
                 common_name=row['COMMON NAME'],

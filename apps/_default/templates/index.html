@@ -10,7 +10,7 @@
 <div class="section" id="app" v-cloak>
   <!-- Put here your Vue.js template -->
 
-  <div class="navbar">
+  <!-- <div class="navbar">
     <!-- Links to the other pages -->
     <div>
       <a href="[[=URL('my_checklists')]]">My Checklists</a> <!-- Link to checklist page/controller-->
@@ -20,7 +20,7 @@
     <div>
       <input type="text" id="species-searchbar" placeholder="Select species..." autocomplete="off">
     </div>
-  </div>
+  </div> -->
 
   <h1 class="title"><i class="fa-solid fa-cube"></i> Title</h1>
   
@@ -35,7 +35,7 @@
   let my_callback_url = "[[=XML(my_callback_url)]]";
   let get_species_url = "[[=XML(get_species_url)]]";
   let add_checklist_url = "[[=XML(add_checklist_url)]]";
-  let my_checklists_url = "[[=XML(add_checklist_url)]]";
+  let my_checklists_url = "[[=XML(my_checklists_url)]]";
   let user_stats_url = "[[=XML(user_stats_url)]]";
 </script>
 <script>
