@@ -8,22 +8,24 @@
 
 
 <div class="section" id="app" v-cloak>
-  <!-- Put here your Vue.js template -->
-
-  <!-- <div class="navbar">
-    <!-- Links to the other pages -->
-    <div>
-      <a href="[[=URL('my_checklists')]]">My Checklists</a> <!-- Link to checklist page/controller-->
-      <a href="[[=URL('user_stats')]]">Sighting Statistics</a> <!-- Link to user stats page/controller-->
-    </div>
-    <!-- Species searchbar -->
-    <div>
-      <input type="text" id="species-searchbar" placeholder="Select species..." autocomplete="off">
-    </div>
-  </div> -->
-
   <h1 class="title"><i class="fa-solid fa-cube"></i> Title</h1>
   
+  <div class="dropdown" :class="{ 'is-active': query }">
+    <div class="dropdown-trigger">
+      <input 
+        class="input"
+        type="text"
+        placeholder="Search for bird..."
+        v-model="query"
+      ></span>
+    </div>
+    <div class="dropdown-menu" id="dropdown-menu" role="menu">
+      <div class="dropdown-content" v-for="bird_name in auto_completed">
+        <div class="dropdown-item">{{ bird_name }}</div>
+      </div>
+    </div>
+  </div>
+
   <div id="map" style="width: 100%; height: 500px;"></div>
 
 </div>
@@ -37,6 +39,7 @@
   let add_checklist_url = "[[=XML(add_checklist_url)]]";
   let my_checklists_url = "[[=XML(my_checklists_url)]]";
   let user_stats_url = "[[=XML(user_stats_url)]]";
+  let get_densities_url = "[[=XML(get_densities_url)]]";
 </script>
 <script>
   (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({

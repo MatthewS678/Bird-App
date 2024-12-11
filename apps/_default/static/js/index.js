@@ -2,50 +2,28 @@
 
 // This will be the object that will contain the Vue attributes
 // and be used to initialize it.
+
+// TODO: move into vue
+
 let app = {};
-
-
-app.data = {    
-    data: function() {
-        return {
-            map_center_pos : {},
-            marker_pos : {}
-        };
-    },
-    methods: {
-        update_map_center: function(position) {
-            this.map_center_pos = position;
-        },
-
-        add_checklist: function(position) {
-            // axios.post(add_checklist_url, {
-            //     position: position
-            // }).then(() => {
-            //     this.marker_pos = position;
-            // });
-            window.location.href = "/add_checklist?latitude=" + position.lat +"&longitude=" + position.lng  
-        }
-
-    }
-};
-
 let map;
+let heatmap;
+
 async function initMap() {
     const { Map } = await google.maps.importLibrary("maps");
     const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+    const { HeatmapLayer } = await google.maps.importLibrary("visualization")
     map = new Map(document.getElementById("map"), {
-        center: { lat: 36.97376596436481, lng: -122.03073866623154 },   //Santa Cruz Coordinates
-        zoom: 10,
-        mapId: "6ccc43bc2603356d"
+        center: { lat: 0, lng: 0 },   //Santa Cruz Coordinates
+        zoom: 13,
+        mapId: "978da9b8cd8f4e30"
+    });
+    heatmap = new HeatmapLayer({
+        maxIntensity: 200,
+        map: map
     });
 
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((position) => {
-            var position = { lat: position.coords.latitude, lng: position.coords.longitude };
-            map.setCenter(position);
-            app.vue.update_map_center(position);
-        })
-    }
+    app.data.methods.get_curr_location();
 
     let marker;
     map.addListener("click", (e) => {
@@ -62,7 +40,7 @@ async function initMap() {
         content.textContent = "Enter Checklist"
 
         marker = new AdvancedMarkerElement({
-            map,
+            map: map,
             position: e.latLng,
             content: content
         });
@@ -78,11 +56,57 @@ async function initMap() {
 
 initMap();
 
+app.data = {    
+    data: function() {
+        return {
+            map_center_pos : {},
+            marker_pos : {},
+            densities : [],
+            species : [],
+            query : "",
+            bird_filter : "",
+        };
+    },
+
+    computed: {
+        auto_completed: function() {
+            return this.species.filter(bird_name => 
+                bird_name.toLowerCase().includes(this.query.toLowerCase())
+            );
+        }
+    },
+
+    methods: {
+        get_curr_location: function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    var position = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    map.setCenter(position);
+                    this.map_center_pos = position;
+                })
+            }
+        },
+
+        add_checklist: function(position) {
+            window.location.href = "/add_checklist?latitude=" + position.lat +"&longitude=" + position.lng  
+        },
+    },
+};
+
 app.vue = Vue.createApp(app.data).mount("#app");
 
 app.load_data = function () {
     axios.get(get_species_url).then(function (r) {
-        console.log(r.data)
+        app.vue.species = r.data.species;
+    });
+    axios.get(get_densities_url).then(function (r) {
+        for (var event of r.data.events) {
+            app.vue.densities.push({
+                location: new google.maps.LatLng(event.lat, event.lng),
+                weight: event.count
+            })
+        }
+        heatmap.setData(app.vue.densities)
     });
 }
 
