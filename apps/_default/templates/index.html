@@ -29,7 +29,38 @@
     </div>
   </div>
 
-  <div id="map" style="width: 100%; height: 500px;"></div>
+  <div class="columns">
+    <div class="column is-8" style="position: relative;">
+      <div id="map" style="width: 100%; height: 500px;"></div>
+    </div>
+
+    <div class="column is-4">
+      <div class="box-container">
+        <div class="box">
+          <label class="label">Map Options</label>
+          <div class="field">
+            <button id="create-region" class="button is-success" @click="drawPolygon">Create Region</button>
+            <button id="region-info" class="button is-primary" @click="viewRegionInfo">Region Information</button>
+            <button id="enter-checklist" class="button is-info" @click="enterChecklist">Enter Checklist</button>
+            <button id="clear-map" class="button is-danger" @click="clearMap">Clear Map</button>
+          </div>
+        </div>
+
+        <div class="box">
+          <label class="label">Map Filter</label>
+          <div class="field">
+            <label>Filter by Species:</label>
+            <div class="control">
+              <select id="species" v-model="selectedSpecies" @change="loadHeatMap">
+                <option v-for="species in speciesList" :key="species.id" :value="species.id">
+                  {{ species.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
 </div>
 

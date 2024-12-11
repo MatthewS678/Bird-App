@@ -37,7 +37,6 @@ async function initMap() {
         let content = document.createElement("div");
 
         content.className = "button is-link"
-        content.textContent = "Enter Checklist"
 
         marker = new AdvancedMarkerElement({
             map: map,
