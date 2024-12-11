@@ -8,20 +8,23 @@
 
 
 <div class="section" id="app" v-cloak>
-  <h1 class="title"><i class="fa-solid fa-cube"></i> Title</h1>
+  <h3>Click on the map to enter a checklist!</h3>
+  <h3>Draw a rectangle over a region you wish to see statistics on!</h3>
   
-  <div class="dropdown" :class="{ 'is-active': query }">
+  <div class="dropdown" :class="{ 'is-active': query && drop}">
     <div class="dropdown-trigger">
       <input 
         class="input"
         type="text"
         placeholder="Search for bird..."
         v-model="query"
+        @keydown.enter="update_heatmap"
+        @click="drop=true"
       ></span>
     </div>
     <div class="dropdown-menu" id="dropdown-menu" role="menu">
       <div class="dropdown-content" v-for="bird_name in auto_completed">
-        <div class="dropdown-item">{{ bird_name }}</div>
+        <div @click="select_bird(bird_name)" class="dropdown-item">{{ bird_name }}</div>
       </div>
     </div>
   </div>

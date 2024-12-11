@@ -146,11 +146,22 @@ def my_checklist(path=None):
 @action('get_densities')
 @action.uses(db)
 def get_contacts():
-    events = db(db.checklists.sampling_event == db.sightings.sampling_event).select(
-        db.checklists.latitude, 
-        db.checklists.longitude, 
-        db.sightings.observation_count
-    )
+    bird_name = request.query.get('bird_name', '')
+    if bird_name == '':
+        events = db(db.checklists.sampling_event == db.sightings.sampling_event).select(
+            db.checklists.latitude, 
+            db.checklists.longitude, 
+            db.sightings.observation_count
+        )
+    else:
+        events = db(
+            (db.checklists.sampling_event == db.sightings.sampling_event) &
+            (db.sightings.common_name == bird_name)
+        ).select(
+            db.checklists.latitude, 
+            db.checklists.longitude, 
+            db.sightings.observation_count
+        )
 
     event_list = [
         dict(

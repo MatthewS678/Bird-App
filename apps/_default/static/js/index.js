@@ -23,7 +23,7 @@ async function initMap() {
         map: map
     });
 
-    app.data.methods.get_curr_location();
+    app.data.methods.center_map();
 
     let marker;
     map.addListener("click", (e) => {
@@ -64,6 +64,7 @@ app.data = {
             densities : [],
             species : [],
             query : "",
+            drop : true,
             bird_filter : "",
         };
     },
@@ -77,7 +78,7 @@ app.data = {
     },
 
     methods: {
-        get_curr_location: function() {
+        center_map: function() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((position) => {
                     var position = { lat: position.coords.latitude, lng: position.coords.longitude };
@@ -90,6 +91,29 @@ app.data = {
         add_checklist: function(position) {
             window.location.href = "/add_checklist?latitude=" + position.lat +"&longitude=" + position.lng  
         },
+
+        update_heatmap: function() {
+            if (this.species.some(name => name.toLowerCase() == this.query.toLowerCase())) {
+                axios.get(get_densities_url, {
+                    params: { bird_name: this.query }
+                }).then(function(r) {
+                    var data = []
+                    for (var event of r.data.events) {
+                        data.push({
+                            location: new google.maps.LatLng(event.lat, event.lng),
+                            weight: event.count
+                        })
+                    }
+                    heatmap.setData(data)
+                });
+            }
+        },
+
+        select_bird: function(bird_name) {
+            this.query=bird_name; 
+            this.drop=false;
+            this.update_heatmap();
+        }
     },
 };
 
