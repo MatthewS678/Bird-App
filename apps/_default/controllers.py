@@ -27,6 +27,7 @@ Warning: Fixtures MUST be declared with @action.uses({fixtures}) else your app w
 
 from pprint import pprint
 import json
+import math
 from py4web import action, request, abort, redirect, URL, HTTP
 from yatl.helpers import A
 from .common import db, session, T, cache, auth, logger, authenticated, unauthenticated, flash
@@ -51,6 +52,13 @@ def index():
         my_checklists_url = URL('my_checklists', signer=url_signer),
         get_densities_url = URL('get_densities', signer=url_signer)
     )
+
+@action('location')
+@action.uses('location.html', db, auth, url_signer)
+def location():
+    # Any data you need to pass to the template
+    return dict(some_data='value')  # Update with the actual data you need
+
 
 @action('my_callback')
 @action.uses() # Add here things like db, auth, etc.
@@ -173,9 +181,71 @@ def get_contacts():
     ]
     return dict(events=event_list)
 
+@action('get_region_stats', method='POST')
+@action.uses(db)
+def get_region_stats():
+    # Extract coordinates and radius from request
+    lat = request.json.get('latitude')
+    lng = request.json.get('longitude')
+    radius = request.json.get('radius', 1.0)  # Optional, default to 1 km radius
+
+    # Define the bounding box (approximation) for region search
+    lat_min = lat - radius / 111  # Convert km to degree approx.
+    lat_max = lat + radius / 111
+    lng_min = lng - radius / (111 * abs(math.cos(math.radians(lat))))
+    lng_max = lng + radius / (111 * abs(math.cos(math.radians(lat))))
+
+    # Query species and sightings in the region
+    species_query = db(
+        (db.checklists.latitude > lat_min) & (db.checklists.latitude < lat_max) &
+        (db.checklists.longitude > lng_min) & (db.checklists.longitude < lng_max) &
+        (db.sightings.sampling_event == db.checklists.sampling_event)
+    ).select(db.sightings.common_name, db.sightings.observation_count, db.checklists.observer_id)
+
+    # Aggregate species data
+    species_data = {}
+    for sighting in species_query:
+        species_name = sighting.sightings.common_name
+        count = sighting.sightings.observation_count
+        if species_name not in species_data:
+            species_data[species_name] = {'count': 0, 'checklists': 0}
+        species_data[species_name]['count'] += count
+        species_data[species_name]['checklists'] += 1
+
+    # Aggregate top contributors
+    contributors_query = db(
+        (db.checklists.latitude > lat_min) & (db.checklists.latitude < lat_max) &
+        (db.checklists.longitude > lng_min) & (db.checklists.longitude < lng_max)
+    ).select(db.checklists.observer_id)
+
+    contributors_data = {}
+    for checklist in contributors_query:
+        observer_id = checklist.checklists.observer_id
+        if observer_id not in contributors_data:
+            contributors_data[observer_id] = 0
+        contributors_data[observer_id] += 1
+
+    # Sort contributors by the number of checklists
+    top_contributors = sorted(contributors_data.items(), key=lambda x: x[1], reverse=True)
+
+    # Return the region data
+    return dict(
+        species_data=species_data,
+        top_contributors=top_contributors
+    )
+
+@action('get_species_data')
+@action.uses(db)
+def get_species_data():
+    species_name = request.query.get('species_name')
+
+    sightings = db(
+        (db.sightings.common_name == species_name)
+    ).select(db.checklists.observation_date, db.sightings.observation_count)
     
-
-
-
-
-
+    data = {
+        'dates': [s.observation_date for s in sightings],
+        'sightings': [s.observation_count for s in sightings]
+    }
+    
+    return json(data)

@@ -1,0 +1,43 @@
+[[extend 'layout.html']]
+
+<style>
+[v-cloak] {
+     display: none;
+}
+</style>
+
+[[block 'content']]
+    <div id="app">
+        <div>
+            <h1>Region Information</h1>
+            <button @click="showRegionInfo">Show Region Info</button>
+
+            <div v-if="regionInfo">
+                <h2>Species List</h2>
+                <ul>
+                    <li v-for="species in regionInfo.species" :key="species.name">
+                        {{ species.name }} - Checklists: {{ species.checklists }} | Sightings: {{ species.sightings }}
+                        <button @click="showGraph(species)">Show Graph</button>
+                    </li>
+                </ul>
+
+                <div id="graph"></div>
+
+                <h2>Top Contributors</h2>
+                <ul>
+                    <li v-for="contributor in regionInfo.topContributors" :key="contributor.name">
+                        {{ contributor.name }} - Contributions: {{ contributor.contributions }}
+                    </li>
+                </ul>
+            </div>
+
+            <div v-if="rectangleCoordinates">
+                <h2>Rectangle Coordinates</h2>
+                <p>Southwest: {{ rectangleCoordinates.southwest }}</p>
+                <p>Northeast: {{ rectangleCoordinates.northeast }}</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="location.js"></script>
+[[end]]

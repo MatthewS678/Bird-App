@@ -152,7 +152,12 @@ app.data = {
                 marker.setMap(null)
             });
             markers = [];
-        },        
+        },
+        
+        viewRegionInfo: function() {
+            // Navigate to location.html when button is clicked
+            window.location.href = "/location"; // Adjust the path if necessary
+        },
     },
 };
 
