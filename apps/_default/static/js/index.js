@@ -8,11 +8,13 @@
 let app = {};
 let map;
 let heatmap;
+let drawnRectangles = [];
 
 async function initMap() {
     const { Map } = await google.maps.importLibrary("maps");
     const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
-    const { HeatmapLayer } = await google.maps.importLibrary("visualization")
+    const { HeatmapLayer } = await google.maps.importLibrary("visualization");
+    const { DrawingManager } = await google.maps.importLibrary("drawing");
     map = new Map(document.getElementById("map"), {
         center: { lat: 0, lng: 0 },   //Santa Cruz Coordinates
         zoom: 13,
@@ -51,6 +53,26 @@ async function initMap() {
             marker.position = null; // remove marker when clicked
         })
     });
+
+    // Add the drawing manager
+    const drawingManager = new DrawingManager({
+        map: map,
+        drawingMode: google.maps.drawing.OverlayType.RECTANGLE, // Set to rectangle mode
+        rectangleOptions: {
+            editable: true, // Allows editing of the rectangle
+            draggable: true // Allows dragging of the rectangle
+        }
+    });
+
+    google.maps.event.addListener(drawingManager, 'rectanglecomplete', function(rectangle) {
+        console.log('Rectangle drawn:', rectangle);
+        // Store the drawn rectangle in the array
+        drawnRectangles.push(rectangle); 
+        console.log(drawnRectangles);
+        const bounds = rectangle.getBounds();
+        console.log('Rectangle bounds:', bounds.toString()); // Log the bounds
+    });
+    
 }
 
 initMap();
@@ -112,7 +134,28 @@ app.data = {
             this.query=bird_name; 
             this.drop=false;
             this.update_heatmap();
-        }
+        },
+
+        activateRectangleDrawing: function() {
+            const drawingManager = new google.maps.drawing.DrawingManager({
+                map: map,
+                drawingMode: google.maps.drawing.OverlayType.RECTANGLE, // Set to rectangle mode
+                rectangleOptions: {
+                    editable: true, // Allows editing of the rectangle
+                    draggable: true // Allows dragging of the rectangle
+                }
+            });
+        },
+
+        clearMap: function() {
+            // Clear only the drawn rectangles
+            drawnRectangles.forEach(rectangle => {
+                rectangle.setMap(null); // Remove each rectangle from the map
+            });
+            drawnRectangles = []; // Clear the array of rectangles
+        
+            // Leave markers and heatmap untouched
+        },        
     },
 };
 
