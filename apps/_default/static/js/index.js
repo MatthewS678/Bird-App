@@ -9,6 +9,7 @@ let app = {};
 let map;
 let heatmap;
 let drawnRectangles = [];
+let markers = [];
 
 async function initMap() {
     const { Map } = await google.maps.importLibrary("maps");
@@ -28,49 +29,31 @@ async function initMap() {
     app.data.methods.center_map();
 
     let marker;
-    map.addListener("click", (e) => {
-        console.log(marker)
+    map.addListener("dblclick", (e) => {
+        // Log the coordinates of the double-click
+        const latLng = e.latLng;
+        console.log(`Double-clicked at coordinates: Latitude: ${latLng.lat()}, Longitude: ${latLng.lng()}`);
+
+        // Remove previous marker if it exists
         if (marker && marker.position) {
-            marker.position = null  // remove previous marker if present
-            return
+            marker.setMap(null);
         }
-            
 
-        let content = document.createElement("div");
-
-        content.className = "button is-link"
-
+        // Create new marker on double-click
         marker = new AdvancedMarkerElement({
             map: map,
-            position: e.latLng,
-            content: content
+            position: latLng
         });
 
+        // Add to markers array
+        markers.push(marker);
+
+        // Add listener to open checklist page on marker click
         marker.addListener("click", () => {
-            var position = { lat: marker.position.lat, lng: marker.position.lng };
-            console.log(position)
-            app.data.methods.add_checklist(position);
-            marker.position = null; // remove marker when clicked
-        })
-    });
-
-    // Add the drawing manager
-    const drawingManager = new DrawingManager({
-        map: map,
-        drawingMode: google.maps.drawing.OverlayType.RECTANGLE, // Set to rectangle mode
-        rectangleOptions: {
-            editable: true, // Allows editing of the rectangle
-            draggable: true // Allows dragging of the rectangle
-        }
-    });
-
-    google.maps.event.addListener(drawingManager, 'rectanglecomplete', function(rectangle) {
-        console.log('Rectangle drawn:', rectangle);
-        // Store the drawn rectangle in the array
-        drawnRectangles.push(rectangle); 
-        console.log(drawnRectangles);
-        const bounds = rectangle.getBounds();
-        console.log('Rectangle bounds:', bounds.toString()); // Log the bounds
+            const position = { lat: marker.position.lat(), lng: marker.position.lng() };
+            console.log(position);
+            app.data.methods.add_checklist(position);  // Navigate to checklist page
+        });
     });
     
 }
@@ -137,6 +120,7 @@ app.data = {
         },
 
         activateRectangleDrawing: function() {
+            // Initialize the DrawingManager only when the "Create Region" button is clicked
             const drawingManager = new google.maps.drawing.DrawingManager({
                 map: map,
                 drawingMode: google.maps.drawing.OverlayType.RECTANGLE, // Set to rectangle mode
@@ -145,16 +129,29 @@ app.data = {
                     draggable: true // Allows dragging of the rectangle
                 }
             });
+
+            google.maps.event.addListener(drawingManager, 'rectanglecomplete', function(rectangle) {
+                console.log('Rectangle drawn:', rectangle);
+                // Store the drawn rectangle in the array
+                drawnRectangles.push(rectangle); 
+                console.log(drawnRectangles);
+                const bounds = rectangle.getBounds();
+                console.log('Rectangle bounds:', bounds.toString()); // Log the bounds
+            });
         },
 
         clearMap: function() {
-            // Clear only the drawn rectangles
+            // Clear the drawn rectangles
             drawnRectangles.forEach(rectangle => {
                 rectangle.setMap(null); // Remove each rectangle from the map
             });
             drawnRectangles = []; // Clear the array of rectangles
-        
-            // Leave markers and heatmap untouched
+            
+            // Clear markers
+            markers.forEach(marker => {
+                marker.setMap(null)
+            });
+            markers = [];
         },        
     },
 };
