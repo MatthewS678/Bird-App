@@ -26,6 +26,7 @@ Warning: Fixtures MUST be declared with @action.uses({fixtures}) else your app w
 """
 
 from pprint import pprint
+from apps._default.grid_button import GridActionButton
 import json
 import math
 from py4web import action, request, abort, redirect, URL, HTTP
@@ -106,6 +107,7 @@ def add_checklist_sightings():
         #Check if species name is empty and if count is 0
         if len(sighting['species_name']) > 0 and sighting['observation_count'] > 0:
             sighting_id = db.sightings.insert(
+                checklist_id = checklist_id,
                 sampling_event = sampling_id,
                 common_name = sighting['species_name'],
                 observation_count = sighting['observation_count']
@@ -117,10 +119,6 @@ def add_checklist_sightings():
                 raise HTTP(400)
     return dict(id = checklist_id)
 
-def delete_sightings(row_id):
-    checklist = db(db.checklist.id == row_id).select(db.checklist.sampling_event).first()
-    print(checklist)
-
 
 @action('my_checklists')
 @action('my_checklists/<path:path>', method=['POST', 'GET'])
@@ -128,13 +126,23 @@ def delete_sightings(row_id):
 def my_checklist(path=None):
     # checklists = db(db.checklists.observer_id == get_user_id()).select().as_list()
     def species_for_event(row):
-        species = db((db.sightings.sampling_event == row.sampling_event) & (db.sightings.observation_count > 0)).select(db.sightings.common_name)
-        return ', '.join(s.common_name for s in species) if species else 'None'
+        species = db((db.sightings.sampling_event == row.sampling_event) & (db.sightings.observation_count > 0)).select(db.sightings.common_name, db.sightings.observation_count)
+        return ', '.join(s.common_name + ": " + str(s.observation_count) for s in species) if species else 'None'
+    post_action_buttons = [
+    lambda row: GridActionButton(
+        URL("/edit_checklist", row.sampling_event),
+        text="Edit Checklist",
+        icon="fa-plus",
+        additional_classes=["grid-details-button", "button", "is-small"]
+    )
+    ]
     grid = Grid(path,
                 grid_class_style=GridClassStyleBulma,
                 formstyle=FormStyleBulma,
                 query=db.checklists.observer_id == get_user_email(),
                 create=False,
+                editable=False,
+                post_action_buttons=post_action_buttons,
                 columns=[
                     db.checklists.sampling_event,
                     db.checklists.latitude,
@@ -145,11 +153,100 @@ def my_checklist(path=None):
                     Column(
                         "Species",
                         species_for_event,
-                    )
+                    ),
                 ],
                 orderby=[~db.checklists.id],
                 )
     return dict(grid=grid)
+
+@action('edit_checklist')
+@action('edit_checklist/<sampling_event>')
+@action.uses('edit_checklist.html', db, auth.user)
+def edit_checklist(sampling_event):
+
+    checklist = db(db.checklists.sampling_event == sampling_event).select().first().as_dict()
+    if get_user_email() != checklist['observer_id']:
+        redirect('/index')
+    checklist['observation_date'] = checklist['observation_date'].strftime('%Y-%m-%d') if checklist['observation_date'] else ""
+    checklist['time_started'] = checklist['time_started'].strftime('%I:%M') if checklist['time_started'] else ""
+    sightings = db(db.sightings.sampling_event == sampling_event).select().as_list()    
+    # print(json.dumps(sightings))
+    return dict(get_species_url = URL('get_species', signer=url_signer),
+                edit_checklist_sightings_url = URL('edit_checklist_sightings', signer=url_signer),
+                checklist = json.dumps(checklist),
+                sightings= json.dumps(sightings, ensure_ascii=False))
+
+@action('edit_checklist_sightings', method='POST')
+@action.uses(db, auth.user)
+def edit_checklist_sightings():
+    sampling_id = request.json.get("sampling_event")  # Use existing sampling_event ID
+    
+    if not sampling_id:
+        raise HTTP(400, "sampling_event is required")
+
+    checklist = db(db.checklists.sampling_event == sampling_id).select().first()
+    if get_user_email() != checklist['observer_id']:
+        raise HTTP(403, "No access")
+    if checklist:
+        # Update the existing checklist with new values
+        checklist.update_record(
+            sampling_event = sampling_id,
+            latitude=request.json.get("latitude"),
+            longitude=request.json.get("longitude"),
+            observation_date=request.json.get("observation_date"),
+            time_started=request.json.get("time_started"),
+            duration_minutes=request.json.get("observation_duration"),
+            observer_id=get_user_email()
+        )
+    else:
+        raise HTTP(400, "Checklist with the given sampling_event does not exist")
+    
+    sightings_from_request = request.json.get("sightings")
+    
+    sightings_request_set = set(
+        (sighting['common_name'], sighting['observation_count']) for sighting in sightings_from_request
+    )
+    
+    existing_sightings = db(db.sightings.sampling_event == sampling_id).select()
+
+    # Delete sightings that exist in the database but are not present in the request
+    for sighting in existing_sightings:
+        sighting_tuple = (sighting.common_name, sighting.observation_count)
+        if sighting_tuple not in sightings_request_set:
+            # If sighting is not in the request, delete it
+            sighting.delete_record()
+
+    # For each sighting in the request, either update or insert it
+    for sighting in sightings_from_request:
+        # Ensure species_name and observation_count are valid
+        if len(sighting['common_name']) > 0 and sighting['observation_count'] > 0:
+            # Check if the sighting exists for the sampling_event and common_name
+            existing_sighting = db(
+                (db.sightings.sampling_event == sampling_id) &
+                (db.sightings.common_name == sighting['common_name'])
+            ).select().first()
+            
+            if existing_sighting:
+                # Update the existing sighting
+                existing_sighting.update_record(
+                    checklist_id = checklist['id'],
+                    observation_count=sighting['observation_count']
+                )
+            else:
+                # If sighting doesn't exist, insert a new sighting
+                sighting_id = db.sightings.insert(
+                    checklist_id = checklist['id'],
+                    sampling_event=sampling_id,
+                    common_name=sighting['common_name'],
+                    observation_count=sighting['observation_count']
+                )
+                # Check if species is in the species table
+                if db(db.species.common_name == sighting['common_name']).count() == 0:
+                    raise HTTP(400, f"Species '{sighting['common_name']}' not found in species table")
+
+    return dict(message="Checklist and sightings updated successfully")
+    
+    
 
 @action('get_densities')
 @action.uses(db)

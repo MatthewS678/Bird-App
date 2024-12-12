@@ -31,11 +31,12 @@ db.define_table(
     Field('observation_date', 'date', default=datetime.date.today, required=IS_NOT_EMPTY()),
     Field('time_started', 'time', required=IS_NOT_EMPTY()),
     Field('observer_id', 'string', default =get_user_email),
-    Field('duration_minutes', 'integer', required=IS_NOT_EMPTY())
+    Field('duration_minutes', 'integer', required=True)
 )
 
 db.define_table(
     'sightings',
+    Field('checklist_id', 'reference checklists'), #In order to automatically handle deletion of sampling_event
     Field('sampling_event', 'string'),
     Field('common_name', 'string' ),
     Field('observation_count', 'integer')

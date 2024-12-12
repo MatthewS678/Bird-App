@@ -9,24 +9,27 @@ app.data = {
     data: function() {
         return {
             // Complete as you see fit.
-            sightings:[],
-            latitude: latitude || 0,
-            longitude: longitude || 0,
-            observation_date: null,
-            time_started: null,
-            observation_duration: null,
+            
+            sightings: sightings,
+            latitude:  checklist['latitude'] || 0,
+            longitude: checklist['longitude'] || 0,
+            observation_date: checklist['observation_date'],
+            time_started: checklist['time_started'],
+            observation_duration: checklist['duration_minutes'],
+            sampling_event: checklist['sampling_event'],
             species: []
         };
     },
     methods: {
         add_sighting: function() {
             this.sightings.push({
-                species_name: "",
+                common_name: "",
                 observation_count: 0
             })
         },
-        submit_checklist_sightings: function() {
+        edit_checklist_sightings: function() {
             let checklist_data = {
+                sampling_event: this.sampling_event,
                 sightings: this.sightings,
                 latitude: this.latitude,
                 longitude: this.longitude,
@@ -34,14 +37,14 @@ app.data = {
                 time_started: this.time_started,
                 observation_duration: this.observation_duration
             }
-            axios.post(add_checklist_sightings_url, checklist_data)
+            axios.post(edit_checklist_sightings_url, checklist_data)
             .then(function (r) {
                 window.location.href = "/my_checklists"
-                // console.log(checklist_data)
-                // console.log(r.data)
+                console.log(r.data)
             })
             .catch(function(r) {
-                alert("Error adding checklist/sightings")
+                console.log(r.response)
+                alert("Error editing checklist/sightings")
             })
         },
         delete_sighting: function(s_index) {
