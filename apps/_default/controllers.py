@@ -346,3 +346,42 @@ def get_species_data():
     }
     
     return json(data)
+
+@action('user_stats/<path:path>', method=['POST', 'GET'])
+@action('user_stats', method=['POST', 'GET'])
+@action.uses('user_stats.html', db, auth)
+def user_stats(path=None):
+    user_email = get_user_email()
+    # joins the tables and gets the sightings from this user specifically
+    #query = (db.checklists.observer_id == user_email) & (db.sightings.checklist_id == db.checklists.id)
+
+    query = (db.sightings.common_name == "American Crow") # test query
+
+
+    print("query: ", query)
+    rows = db(query).select()
+    print(f"Rows count: {len(rows)} \n {rows}")
+
+    # grid for displaying user stats
+    grid = Grid(path,
+        formstyle=FormStyleBulma,
+        grid_class_style=GridClassStyleBulma,
+        query=query,
+        search_queries=[ # allows for better searching with specific filters 
+            ['Search by Species', lambda val: db.sightings.common_name.contains(val)],
+            ['Search by Observation Count', lambda val: db.sightings.observation_count == int(val)],
+            ['Search by Date', lambda val: db.checklists.observation_date == val],
+            ['Search by Latitude', lambda val: (db.checklists.latitude >= float(val) - 1) & (db.checklists.latitude <= float(val) + 1)], # allows a +-1 buffer when filtering
+            ['Search by Longitude', lambda val: (db.checklists.longitude >= float(val) - 1) &(db.checklists.longitude <= float(val) + 1)],
+        ],
+        fields=[
+            db.sightings.common_name,
+            db.sightings.observation_count,
+            db.checklists.observation_date,
+            db.checklists.latitude,
+            db.checklists.longitude,
+        ],
+        orderby=[db.sightings.common_name],
+    )
+
+    return dict(grid=grid)
