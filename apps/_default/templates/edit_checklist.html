@@ -1,0 +1,95 @@
+[[extend 'layout.html']]
+
+<head>
+    <style>
+        /* Custom CSS for truncating select options */
+        select {
+            width: 100%; /* You can adjust the width */
+        }
+
+        select option {
+            white-space: nowrap;      /* Prevent text from wrapping */
+            overflow: hidden;         /* Hide overflow */
+            text-overflow: ellipsis;  /* Add ellipsis to the overflow text */
+        }
+    </style>
+</head>
+<div class="section" id="app">
+    <div class="columns is-centered">
+        <div class="column is-three-quarters">
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-header-title">Edit Checklist</p>
+                </div>
+                <div class="card-content">
+                    <form @submit.prevent="edit_checklist_sightings()" onkeydown="return event.key !== 'Enter';">
+                    <div class="pb-5">
+                        <p class="title is-5">Coordinates</p>
+                        <div class="columns">
+                            <div class="column">
+                                 <input name="latitude" class="input" step=any required type="number" placeholder="Latitude" v-model="latitude">
+                            </div>   
+                            <div class="column">
+                                <input name="longitude" class="input" step=any required type="number" placeholder="Longitude" v-model="longitude">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pb-5">
+                        <p class="title is-5">Observation Date</p>
+                        <input name="observation_date" required class="input" type="date" v-model="observation_date">
+                    </div>
+                    <div class="pb-5">
+                        <p class="title is-5">Time</p>
+                        <input name="time" class="input" required type="time" v-model="time_started">
+                    </div>
+                    <div class="pb-5">
+                        <p class="title is-5">Duration (Minutes)</p>
+                        <input name="duration" class="input" required type="number" v-model="observation_duration">
+                    </div>
+                    <p class="title is-5">Sightings</p>
+                    <div class="pb-5" v-for="(sighting, s_index) in sightings">
+                        <div class="columns">
+                            <div class="column">
+                                <div class="select">
+                                    <select v-model="sighting.common_name">
+                                      <option v-for="common_name in species">{{common_name}}</option>
+                                    </select>
+                                  </div>
+                            </div>
+                            <div class="column">
+                                <input name="observation_count" type="number" class="input" v-model="sighting.observation_count" placeholder="Species">
+                            </div>
+                            <div class="column is-one-fourth">
+                                <button class="button is-success" type="button" @click="increment(s_index)">+</button>
+                                <button class="button is-danger" type="button" @click="decrement(s_index)">-</button>
+                                <button class="button trash is-narrow" type="button" @click="delete_sighting(s_index)"><i class="trash has-text-danger fa fa-trash"></i></button>
+                                
+                            </div>
+                        </div>
+                        
+                    </div>
+
+                    <div class="">
+                        <button class="button is-success" type="button" @click="add_sighting()">+ Add Sighting</button>
+                    </div>
+                    <br>
+                    <button class="button is-success" type="submit" @submit="edit_checklist_sightings()">Submit</button>
+                </div>
+                </form>
+            </div>
+            
+        </div>
+    </div>
+</div>
+[[block page_scripts]]
+<script>
+    let get_species_url = "[[=XML(get_species_url)]]";
+    let edit_checklist_sightings_url = "[[=XML(edit_checklist_sightings_url)]]";
+    let checklist = JSON.parse('[[=XML(checklist)]]');
+    let parser = new DOMParser();
+    //Weird work around because of apostrpohe in species name causing string to escape before string is finished
+    let sightings = JSON.parse(parser.parseFromString('[[=sightings]]', "text/html").documentElement.textContent);
+    
+  </script>
+<script src="js/edit_checklist.js"></script>
+[[end]]
