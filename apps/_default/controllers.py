@@ -353,14 +353,13 @@ def get_species_data():
 def user_stats(path=None):
     user_email = get_user_email()
     # joins the tables and gets the sightings from this user specifically
-    #query = (db.checklists.observer_id == user_email) & (db.sightings.checklist_id == db.checklists.id)
+    query = (db.checklists.observer_id == user_email) & (db.sightings.checklist_id == db.checklists.id)
 
-    query = (db.sightings.common_name == "American Crow") # test query
-
-
-    print("query: ", query)
-    rows = db(query).select()
-    print(f"Rows count: {len(rows)} \n {rows}")
+    # FOR DEBUGGING
+    #query = (db.sightings.common_name == "American Crow") # test query
+    #print("query: ", query)
+    #rows = db(query).select()
+    #print(f"Rows count: {len(rows)} \n {rows}")
 
     # grid for displaying user stats
     grid = Grid(path,
@@ -370,7 +369,7 @@ def user_stats(path=None):
         search_queries=[ # allows for better searching with specific filters 
             ['Search by Species', lambda val: db.sightings.common_name.contains(val)],
             ['Search by Observation Count', lambda val: db.sightings.observation_count == int(val)],
-            ['Search by Date', lambda val: db.checklists.observation_date == val],
+            ['Search by Date (YYYY-MM-DD)', lambda val: db.checklists.observation_date == val],
             ['Search by Latitude', lambda val: (db.checklists.latitude >= float(val) - 1) & (db.checklists.latitude <= float(val) + 1)], # allows a +-1 buffer when filtering
             ['Search by Longitude', lambda val: (db.checklists.longitude >= float(val) - 1) &(db.checklists.longitude <= float(val) + 1)],
         ],
@@ -382,6 +381,9 @@ def user_stats(path=None):
             db.checklists.longitude,
         ],
         orderby=[db.sightings.common_name],
+        editable=False,
+        deletable=False,
+        details=False,
     )
 
     return dict(grid=grid)
