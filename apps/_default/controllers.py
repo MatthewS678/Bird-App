@@ -25,13 +25,15 @@ session, db, T, auth, and tempates are examples of Fixtures.
 Warning: Fixtures MUST be declared with @action.uses({fixtures}) else your app will result in undefined behavior
 """
 
-from py4web import action, request, abort, redirect, URL
+from pprint import pprint
+import json
+from py4web import action, request, abort, redirect, URL, HTTP
 from yatl.helpers import A
 from .common import db, session, T, cache, auth, logger, authenticated, unauthenticated, flash
 from py4web.utils.url_signer import URLSigner
 from .models import get_user_email, get_user_id
 
-GOOGLE_MAPS_API_KEY = 'AIzaSyBaLGcjO6a4vfgZSMXeozjhuFB5zQ1YyZo'
+GOOGLE_MAPS_API_KEY = 'REDACTED'
 
 url_signer = URLSigner(session)
 
