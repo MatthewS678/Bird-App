@@ -9,58 +9,55 @@
     width: 100%;
     height: 300px;
 }
+
+.species {
+    max-height: 40vh;
+    overflow:scroll; 
+}
+
 </style>
 
-<div id="app">
+<div id="app" class="section" v-cloak >
+    <h1 class="title is-3">Region Information</h1>
     <div>
-        <h1>Region Information</h1>
-        <button @click="showRegionInfo">Show Region Info</button>
-<div id="app">
-    <div>
-        <h1>Region Information</h1>
-        <button @click="showRegionInfo">Show Region Info</button>
-
-        <div v-if="regionInfo">
-            <h2>Species List</h2>
-            <ul>
-                <li v-for="species in regionInfo.species" :key="species.name">
-                    {{ species.name }} - Checklists: {{ species.checklists }} | Sightings: {{ species.sightings }}
-                    <button @click="showGraph(species)">Show Graph</button>
-                </li>
-            </ul>
-        <div v-if="regionInfo">
-            <h2>Species List</h2>
-            <ul>
-                <li v-for="species in regionInfo.species" :key="species.name">
-                    {{ species.name }} - Checklists: {{ species.checklists }} | Sightings: {{ species.sightings }}
-                    <button @click="showGraph(species)">Show Graph</button>
-                </li>
-            </ul>
-
-            <div id="graph"></div>
-            <div id="graph"></div>
-
-            <h2>Top Contributors</h2>
-            <ul>
-                <li v-for="contributor in regionInfo.topContributors" :key="contributor.name">
-                    {{ contributor.name }} - Contributions: {{ contributor.contributions }}
-                </li>
-            </ul>
-        </div>
-            <h2>Top Contributors</h2>
-            <ul>
-                <li v-for="contributor in regionInfo.topContributors" :key="contributor.name">
-                    {{ contributor.name }} - Contributions: {{ contributor.contributions }}
-                </li>
-            </ul>
-        </div>
-
-        <div v-if="rectangleCoordinates">
-            <h2>Rectangle Coordinates</h2>
-            <p>Southwest: {{ rectangleCoordinates.southwest.lat }}, {{ rectangleCoordinates.southwest.lng }}</p>
-            <p>Northeast: {{ rectangleCoordinates.northeast.lat }}, {{ rectangleCoordinates.northeast.lng }}</p>
+        <div class="columns is-clipped">
+            <div class="column is-one-third">
+                <div class="box">
+                    <h2 class="title is-5">Species</h2>
+                    <div class="select">
+                        <select v-model="query" @change="showGraph()">
+                            <option :value="i.name" v-for="i in species">
+                                {{i.name}}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <div class="box">
+                    <div class="table-container">
+                        <h2 class="title is-5">Top Contributors</h2>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Contributor</th>
+                                    <th>Contributions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="contributor in topContributors">
+                                    <td>{{contributor.name}}</td>
+                                    <td>{{contributor.contributions}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+    </div>
+        
+
+        <div id="graph"></div>
 </div>
 
 [[block page_scripts]]
