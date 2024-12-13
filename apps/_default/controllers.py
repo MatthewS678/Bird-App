@@ -280,15 +280,19 @@ def location():
     )
 
 
-@action('get_region_stats', method=['POST'])
-@auth.requires_login()
+@action('get_region_stats')
 def get_region_stats():
     try:
-        # Get request data
+        # Get request data and log it
         request_data = request.json
+        if request_data is None:
+            return json.dumps({"error": "Request body is not valid JSON"})
+        
+        print(f"Request Data: {request_data}")
+        
         southwest = request_data.get("southwest")
         northeast = request_data.get("northeast")
-        
+
         # Query checklists in the bounding box
         checklists = db((db.checklists.latitude >= southwest["lat"]) &
                          (db.checklists.latitude <= northeast["lat"]) &
