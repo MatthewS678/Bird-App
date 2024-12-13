@@ -4,6 +4,28 @@
 [v-cloak] {
      display: none;
 }
+.dropdown-menu {
+       max-height: 30vh;
+       overflow:scroll; 
+
+
+
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
 </style>
 
 
@@ -11,7 +33,20 @@
 
   <div class="columns is-centered">
     <div class="column is-8" style="position: relative;">
-      <div id="map" style="width: 100%; height: 50vh;"></div>
+      <div id="map" style="width: 100%; height: 70vh;"></div>
+      <div v-if="loading" id="loading-overlay" style="
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;">
+        <div class="spinner"></div>
+      </div>
     </div>
 
     <div class="column is-one-third">
@@ -31,15 +66,7 @@
         <div class="box">
           <label class="label">Map Options</label>
           <div class="field">
-            <button id="create-region" class="button is-success" @click="activateRectangleDrawing">Create Region</button>
-            <button id="region-info" class="button is-primary" @click="viewRegionInfo">Region Information</button>
-            <button id="clear-map" class="button is-danger" @click="clearMap">Clear Map</button>
-          </div>
-        </div>
-
-        <div class="box">
-          <label class="label">Map Filter</label>
-          <label>Filter by Species:</label>
+            <label>Filter by Species:</label>
           <div class="field">
             
             <div class="dropdown" :class="{ 'is-active': query && drop}">
@@ -51,6 +78,7 @@
                   v-model="query"
                   @keydown.enter="update_heatmap"
                   @click="drop=true"
+                  @input="check_empty()"
                 ></span>
               </div>
               <div class="dropdown-menu" id="dropdown-menu" role="menu">
@@ -59,6 +87,10 @@
                 </div>
               </div>
             </div>
+          </div>
+            <button id="create-region" class="button is-success" @click="activateRectangleDrawing">Create Region</button>
+            <button id="region-info" class="button is-primary" @click="viewRegionInfo">Region Information</button>
+            <button id="clear-map" class="button is-danger" @click="clearMap">Clear Map</button>
           </div>
         </div>
       </div>

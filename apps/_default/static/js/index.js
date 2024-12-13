@@ -18,30 +18,11 @@ async function initMap() {
     const { HeatmapLayer } = await google.maps.importLibrary("visualization");
     const { DrawingManager } = await google.maps.importLibrary("drawing");
     map = new Map(document.getElementById("map"), {
-        center: { lat: 36.973439082866655, lng: -122.0310324947461 },   //Santa Cruz Coordinates
+        center: { lat: 0, lng: 0 },   //Santa Cruz Coordinates
         zoom: 13,
         mapId: "978da9b8cd8f4e30"
     });
     
-    // Center map on user's current location
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const userLocation = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude,
-                };
-    
-                map.setCenter(userLocation);
-            },
-            (error) => {
-                console.error("Error getting location:", error);
-                alert("Please check location permissions for this site");
-            }
-        );
-    } else {
-        alert("Geolocation is not supported by this browser.");
-    }
     heatmap = new HeatmapLayer({
         maxIntensity: 200,
         map: map
@@ -88,6 +69,7 @@ app.data = {
             query : "",
             drop : true,
             bird_filter : "",
+            loading: true
         };
     },
 
@@ -113,9 +95,27 @@ app.data = {
         add_checklist: function(position) {
             window.location.href = "/add_checklist?latitude=" + position.lat +"&longitude=" + position.lng  
         },
+        check_empty: function() {
+            if(this.query === "") {
+                this.loading = true
+                let self = this
+                axios.get(get_densities_url).then(function (r) {
+                    for (var event of r.data.events) {
+                        self.densities.push({
+                            location: new google.maps.LatLng(event.lat, event.lng),
+                            weight: event.count
+                        })
+                    }
+                    heatmap.setData(self.densities)
+                    self.loading = false;
+                });
+            }
+        },
 
         update_heatmap: function() {
+            let self = this
             if (this.species.some(name => name.toLowerCase() == this.query.toLowerCase())) {
+                self.loading = true;
                 axios.get(get_densities_url, {
                     params: { bird_name: this.query }
                 }).then(function(r) {
@@ -127,6 +127,7 @@ app.data = {
                         })
                     }
                     heatmap.setData(data)
+                    self.loading = false;
                 });
             }
         },
@@ -196,6 +197,7 @@ app.data = {
 app.vue = Vue.createApp(app.data).mount("#app");
 
 app.load_data = function () {
+    app.vue.loading = true;
     axios.get(get_species_url).then(function (r) {
         app.vue.species = r.data.species;
     });
@@ -207,7 +209,9 @@ app.load_data = function () {
             })
         }
         heatmap.setData(app.vue.densities)
+        app.vue.loading = false
     });
+
 }
 
 app.load_data();

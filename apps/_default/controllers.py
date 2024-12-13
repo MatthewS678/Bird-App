@@ -243,7 +243,7 @@ def edit_checklist_sightings():
 
 @action('get_densities')
 @action.uses(db)
-def get_contacts():
+def get_densities():
     bird_name = request.query.get('bird_name', '')
     if bird_name == '':
         events = db(db.checklists.sampling_event == db.sightings.sampling_event).select(
