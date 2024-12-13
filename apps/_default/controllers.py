@@ -279,10 +279,73 @@ def location():
         get_species_stats_url = URL('get_species_stats', signer=url_signer)
     )
 
+    return dict(
+        get_region_stats_url = URL('get_region_stats', signer=url_signer),
+        get_species_stats_url = URL('get_species_stats', signer=url_signer)
+    )
 
+
+@action('get_region_stats', method=['POST'])
 @action('get_region_stats', method=['POST'])
 @action.uses(db)
 def get_region_stats():
+    try:
+        # Get request data
+        request_data = request.json
+        southwest = request_data.get("southwest")
+        northeast = request_data.get("northeast")
+        print(southwest)
+        print(northeast)
+        # Query checklists in the bounding box
+        checklists = db((db.checklists.latitude >= southwest["lat"]) &
+                         (db.checklists.latitude <= northeast["lat"]) &
+                         (db.checklists.longitude >= southwest["lng"]) &
+                         (db.checklists.longitude <= northeast["lng"])).select()
+    
+        if not checklists:
+            return json.dumps({"message": "No checklists found in the specified region"})
+
+        species_stats = {}
+        contributors = {}
+        checklist_info = []
+        for checklist in checklists:
+            observer = checklist.observer_id
+            if observer not in contributors:
+                contributors[observer] = 0
+            contributors[observer] += 1
+            checklist_info.append({
+                "sampling_event" : checklist.sampling_event,
+                "observation_date" : checklist.observation_date.strftime('%Y-%m-%d'),
+                "observer_id" : checklist.observer_id
+            })
+        sampling_events = [row.sampling_event for row in checklists]
+        sightings = db(db.sightings.sampling_event.belongs(sampling_events)).select().as_list()
+        for sighting in sightings:
+            
+            species = sighting['common_name']
+            count = sighting['observation_count']
+
+            if species not in species_stats:
+                species_stats[species] = {"checklists": 0, "sightings": 0}
+            species_stats[species]["checklists"] += 1
+            species_stats[species]["sightings"] += count
+
+        
+
+        # Sort top contributors
+        top_contributors = [{"name": k, "contributions": v} for k, v in sorted(contributors.items(), key=lambda item: item[1], reverse=True)[:5]]
+
+        response_data = {
+            "species": [{"name": k, "checklists": v["checklists"], "sightings": v["sightings"]} for k, v in species_stats.items()],
+            "topContributors": top_contributors,
+            "checklists": checklist_info
+        }
+        return json.dumps(response_data)
+
+    except Exception as e:
+        # Log the exception and return an error message
+        print(f"Error: {e}")
+        return json.dumps({"error": str(e)})
     try:
         # Get request data
         request_data = request.json
@@ -344,6 +407,27 @@ def get_region_stats():
 @action('get_species_data')
 @action.uses(db)
 def get_species_data():
+    species_name = request.json.get('species_name')
+    checklists = request.json.get('checklists')
+    if not species_name:
+        return json.dumps({"error": "species_name is required"})
+    
+    sampling_events = [checklist['sampling_event'] for checklist in checklists]
+    query = (db.sightings.sampling_event.belongs(sampling_events)) & (db.sightings.common_name == species_name)
+    sightings =db(query).select(
+        db.sightings.sampling_event,
+        db.sightings.observation_count,
+        db.checklists.observation_date, 
+        left=db.checklists.on(db.sightings.sampling_event == db.checklists.sampling_event)
+    )
+
+
+    data = [{
+        'observation_date': s.checklists.observation_date.strftime('%Y-%m-%d'),
+        'observation_count' : s.sightings.observation_count
+    } for s in sightings]
+    return dict(sightings=data)
+
     species_name = request.json.get('species_name')
     checklists = request.json.get('checklists')
     if not species_name:
