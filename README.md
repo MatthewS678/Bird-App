@@ -1,5 +1,31 @@
 # Project: Bird Watching App
 
+## How to run
+
+The app can be run by typing **py4web run apps --host 127.0.0.1 --port 8000** into your terminal after making sure you have py4web installed. Then
+you can enter the link given to you (should be: http://127.0.0.1:8000) into your browser to view the app.
+
+## Project summary 
+
+### Index Page
+
+The welcoming page that houses the map and allows creating checklists from the map. To create a checklist, double click on a point on
+the map to drop a pin and then click on the dropped pin to create your checklist. Fill in the details of your sightings in the checklist and press submit when done.
+
+### Checklist Page
+
+This page allows users to view, delete, or edit all their checklists.
+
+### Stats Page
+
+This page allows users to search up bird species and view their total observations, last time seen, and a heatmap of chosen species.
+
+### Location Page
+
+This page allows users to view information on their sightings from chosen locations
+
+## Teacher Instructions
+
 The goal of the project is to build a bird-watching app/site, loosely modeled on ebird.org.  The project has been chosen in a way that will let us play with many interesting features in web development, including developing responsive one-page apps, maps integration, user communication, and more. 
 
 The project is organized around the following main pages: 
