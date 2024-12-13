@@ -288,7 +288,8 @@ def get_region_stats():
         request_data = request.json
         southwest = request_data.get("southwest")
         northeast = request_data.get("northeast")
-        
+        print(southwest)
+        print(northeast)
         # Query checklists in the bounding box
         checklists = db((db.checklists.latitude >= southwest["lat"]) &
                          (db.checklists.latitude <= northeast["lat"]) &
@@ -300,14 +301,19 @@ def get_region_stats():
 
         species_stats = {}
         contributors = {}
+        checklist_info = []
         for checklist in checklists:
             observer = checklist.observer_id
             if observer not in contributors:
                 contributors[observer] = 0
-                contributors[observer] += 1
+            contributors[observer] += 1
+            checklist_info.append({
+                "sampling_event" : checklist.sampling_event,
+                "observation_date" : checklist.observation_date.strftime('%Y-%m-%d'),
+                "observer_id" : checklist.observer_id
+            })
         sampling_events = [row.sampling_event for row in checklists]
         sightings = db(db.sightings.sampling_event.belongs(sampling_events)).select().as_list()
-        print(sightings)
         for sighting in sightings:
             
             species = sighting['common_name']
@@ -326,6 +332,7 @@ def get_region_stats():
         response_data = {
             "species": [{"name": k, "checklists": v["checklists"], "sightings": v["sightings"]} for k, v in species_stats.items()],
             "topContributors": top_contributors,
+            "checklists": checklist_info
         }
         return json.dumps(response_data)
 
@@ -337,23 +344,26 @@ def get_region_stats():
 @action('get_species_data')
 @action.uses(db)
 def get_species_data():
-    species_name = request.query.get('species_name')
-    
+    species_name = request.json.get('species_name')
+    checklists = request.json.get('checklists')
     if not species_name:
         return json.dumps({"error": "species_name is required"})
     
-    try:
-        sightings = db(
-            (db.sightings.common_name == species_name)
-        ).select(db.checklists.observation_date, db.sightings.observation_count)
-        
-        data = {
-            'dates': [s.observation_date for s in sightings],
-            'sightings': [s.observation_count for s in sightings]
-        }
-        return json.dumps(data)
-    except Exception as e:
-        return json({"error": str(e)})
+    sampling_events = [checklist['sampling_event'] for checklist in checklists]
+    query = (db.sightings.sampling_event.belongs(sampling_events)) & (db.sightings.common_name == species_name)
+    sightings =db(query).select(
+        db.sightings.sampling_event,
+        db.sightings.observation_count,
+        db.checklists.observation_date, 
+        left=db.checklists.on(db.sightings.sampling_event == db.checklists.sampling_event)
+    )
+
+
+    data = [{
+        'observation_date': s.checklists.observation_date.strftime('%Y-%m-%d'),
+        'observation_count' : s.sightings.observation_count
+    } for s in sightings]
+    return dict(sightings=data)
 
 
 @action('user_stats') # renders all URLs for user_stats page
