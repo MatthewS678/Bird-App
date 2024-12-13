@@ -350,6 +350,7 @@ def get_species_data():
 def user_stats():
     return dict(
         get_user_statistics_url=URL('get_user_statistics'),
+        get_species_url = URL('get_species'),
         search_url=URL('search'),
         get_locations_url=URL('get_locations'),
         google_maps_api_key=GOOGLE_MAPS_API_KEY

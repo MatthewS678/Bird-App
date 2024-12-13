@@ -77,7 +77,7 @@
                   placeholder="Search for bird..."
                   v-model="query"
                   @keydown.enter="update_heatmap"
-                  @click="drop=true"
+                  @focus="drop=true"
                   @input="check_empty()"
                 ></span>
               </div>

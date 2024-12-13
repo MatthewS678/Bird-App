@@ -18,7 +18,7 @@ async function initMap() {
     const { HeatmapLayer } = await google.maps.importLibrary("visualization");
     const { DrawingManager } = await google.maps.importLibrary("drawing");
     map = new Map(document.getElementById("map"), {
-        center: { lat: 0, lng: 0 },   //Santa Cruz Coordinates
+        center: { lat: 36.9741, lng: -122.0308 },  // defaults to Santa Cruz
         zoom: 13,
         mapId: "978da9b8cd8f4e30"
     });
