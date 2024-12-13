@@ -274,25 +274,30 @@ def get_densities():
 @action('location')
 @action.uses('location.html', db, auth, url_signer)
 def location():
-    return dict(bounds=json.dumps(request.query))  # Update with the actual data you need
+    return dict(
+        get_region_stats_url = URL('get_region_stats', signer=url_signer),
+        get_species_stats_url = URL('get_species_stats', signer=url_signer)
+    )
+
 
 @action('get_region_stats', method=['POST'])
 @auth.requires_login()
 def get_region_stats():
-    print("PLEASE WORK")
     try:
-        # Get the latitude, longitude, and radius (or bounding rectangle) from the request
+        # Get request data
         request_data = request.json
         southwest = request_data.get("southwest")
         northeast = request_data.get("northeast")
         
-        # Query the database for checklists within the bounding rectangle
+        # Query checklists in the bounding box
         checklists = db((db.checklists.latitude >= southwest["lat"]) &
-                        (db.checklists.latitude <= northeast["lat"]) &
-                        (db.checklists.longitude >= southwest["lng"]) &
-                        (db.checklists.longitude <= northeast["lng"])).select()
+                         (db.checklists.latitude <= northeast["lat"]) &
+                         (db.checklists.longitude >= southwest["lng"]) &
+                         (db.checklists.longitude <= northeast["lng"])).select()
 
-        # Extract region statistics
+        if not checklists:
+            return json.dumps({"message": "No checklists found in the specified region"})
+
         species_stats = {}
         contributors = {}
         for checklist in checklists:
@@ -306,39 +311,46 @@ def get_region_stats():
                 species_stats[species]["checklists"] += 1
                 species_stats[species]["sightings"] += count
 
-            # Track contributors
             observer = checklist.observer_id
             if observer not in contributors:
                 contributors[observer] = 0
             contributors[observer] += 1
 
-        # Format top contributors
+        # Sort top contributors
         top_contributors = [{"name": k, "contributions": v} for k, v in sorted(contributors.items(), key=lambda item: item[1], reverse=True)[:5]]
 
-        # Prepare the response
         response_data = {
             "species": [{"name": k, "checklists": v["checklists"], "sightings": v["sightings"]} for k, v in species_stats.items()],
             "topContributors": top_contributors,
         }
         return json.dumps(response_data)
+
     except Exception as e:
+        # Log the exception and return an error message
+        print(f"Error: {e}")
         return json.dumps({"error": str(e)})
 
 @action('get_species_data')
 @action.uses(db)
 def get_species_data():
     species_name = request.query.get('species_name')
+    
+    if not species_name:
+        return json({"error": "species_name is required"})
+    
+    try:
+        sightings = db(
+            (db.sightings.common_name == species_name)
+        ).select(db.checklists.observation_date, db.sightings.observation_count)
+        
+        data = {
+            'dates': [s.observation_date for s in sightings],
+            'sightings': [s.observation_count for s in sightings]
+        }
+        return json(data)
+    except Exception as e:
+        return json({"error": str(e)})
 
-    sightings = db(
-        (db.sightings.common_name == species_name)
-    ).select(db.checklists.observation_date, db.sightings.observation_count)
-    
-    data = {
-        'dates': [s.observation_date for s in sightings],
-        'sightings': [s.observation_count for s in sightings]
-    }
-    
-    return json(data)
 
 @action('user_stats') # renders all URLs for user_stats page
 @action.uses('user_stats.html', db, auth.user, url_signer)

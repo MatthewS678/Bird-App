@@ -4,6 +4,11 @@
 [v-cloak] {
     display: none;
 }
+#graph {
+    margin-top: 20px;
+    width: 100%;
+    height: 300px;
+}
 </style>
 
 <div id="app">
@@ -39,6 +44,10 @@
 </div>
 
 [[block page_scripts]]
+<script>
+    let get_region_stats_url = "[[=XML(get_region_stats_url)]]";
+    let get_species_stats_url = "[[=XML(get_species_stats_url)]]";
+</script>  
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="js/location.js"></script>
 <script>
@@ -64,5 +73,5 @@
       key: "***REDACTED***",
       v: "weekly",
     });
-  </script>
+</script>
 [[end]]
