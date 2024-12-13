@@ -280,45 +280,45 @@ def location():
     )
 
 
-@action('get_region_stats')
+@action('get_region_stats', method=['POST'])
+@action.uses(db)
 def get_region_stats():
     try:
         # Get request data and log it
         request_data = request.json
-        if request_data is None:
-            return json.dumps({"error": "Request body is not valid JSON"})
-        
-        print(f"Request Data: {request_data}")
-        
         southwest = request_data.get("southwest")
         northeast = request_data.get("northeast")
-
+        
         # Query checklists in the bounding box
         checklists = db((db.checklists.latitude >= southwest["lat"]) &
                          (db.checklists.latitude <= northeast["lat"]) &
                          (db.checklists.longitude >= southwest["lng"]) &
                          (db.checklists.longitude <= northeast["lng"])).select()
-
+    
         if not checklists:
             return json.dumps({"message": "No checklists found in the specified region"})
 
         species_stats = {}
         contributors = {}
         for checklist in checklists:
-            sightings = db(db.sightings.checklist_id == checklist.id).select()
-            for sighting in sightings:
-                species = sighting.common_name
-                count = sighting.observation_count
-
-                if species not in species_stats:
-                    species_stats[species] = {"checklists": 0, "sightings": 0}
-                species_stats[species]["checklists"] += 1
-                species_stats[species]["sightings"] += count
-
             observer = checklist.observer_id
             if observer not in contributors:
                 contributors[observer] = 0
-            contributors[observer] += 1
+                contributors[observer] += 1
+        sampling_events = [row.sampling_event for row in checklists]
+        sightings = db(db.sightings.sampling_event.belongs(sampling_events)).select().as_list()
+        print(sightings)
+        for sighting in sightings:
+            
+            species = sighting['common_name']
+            count = sighting['observation_count']
+
+            if species not in species_stats:
+                species_stats[species] = {"checklists": 0, "sightings": 0}
+            species_stats[species]["checklists"] += 1
+            species_stats[species]["sightings"] += count
+
+        
 
         # Sort top contributors
         top_contributors = [{"name": k, "contributions": v} for k, v in sorted(contributors.items(), key=lambda item: item[1], reverse=True)[:5]]
@@ -340,7 +340,7 @@ def get_species_data():
     species_name = request.query.get('species_name')
     
     if not species_name:
-        return json({"error": "species_name is required"})
+        return json.dumps({"error": "species_name is required"})
     
     try:
         sightings = db(
@@ -351,7 +351,7 @@ def get_species_data():
             'dates': [s.observation_date for s in sightings],
             'sightings': [s.observation_count for s in sightings]
         }
-        return json(data)
+        return json.dumps(data)
     except Exception as e:
         return json({"error": str(e)})
 

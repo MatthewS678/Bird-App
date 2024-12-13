@@ -7,6 +7,11 @@ const app = Vue.createApp({
             longLow: null,
             latHigh: null,
             longHigh: null,
+            rectangleCoordinates: null, // Store the rectangle's coordinates
+            latLow: null,
+            longLow: null,
+            latHigh: null,
+            longHigh: null,
         };
     },
     methods: {
@@ -19,15 +24,18 @@ const app = Vue.createApp({
             }
 
             // Send coordinates to the backend
-            axios.get('/get_region_stats', {
+            axios.post('/get_region_stats', {
                 southwest: this.rectangleCoordinates.southwest,
                 northeast: this.rectangleCoordinates.northeast,
             }).then(response => {
+                console.log(response.data)
                 this.regionInfo = response.data;
             }).catch(error => {
                 console.error('Error fetching region info:', error);
             });
         },
+
+        // Show the species graph based on selection
 
         // Show the species graph based on selection
         showGraph(species) {
@@ -66,32 +74,6 @@ const app = Vue.createApp({
             }).catch(error => {
                 console.error('Error fetching species graph data:', error);
             });
-        },
-
-        // Handle rectangle drawn on the map
-        handleRectangleDrawn(rectangle) {
-            const bounds = rectangle.getBounds();
-            this.rectangleCoordinates = {
-                southwest: {
-                    lat: this.latLow,
-                    lng: this.longLow
-                },
-                northeast: {
-                    lat: this.latHigh,
-                    lng: this.longHigh
-                }
-            };
-
-            // Store the coordinates in sessionStorage
-            sessionStorage.setItem('rectangleCoordinates', JSON.stringify(this.rectangleCoordinates));
-        },
-
-        loadRectangleCoordinates() {
-            // Load coordinates from sessionStorage if available
-            const storedCoordinates = sessionStorage.getItem('rectangleCoordinates');
-            if (storedCoordinates) {
-                this.rectangleCoordinates = JSON.parse(storedCoordinates);
-            }
         },
 
         // Fetch coordinates from URL query parameters
