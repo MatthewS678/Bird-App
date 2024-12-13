@@ -36,6 +36,7 @@ from py4web.utils.url_signer import URLSigner
 from .models import get_user_email, get_user_id, generate_sampling_event_id
 from py4web.utils.form import Form, FormStyleBulma, TextareaWidget, FormStyleDefault
 from py4web.utils.grid import Grid, GridClassStyleBulma, Column
+from collections import defaultdict
 
 GOOGLE_MAPS_API_KEY = 'AIzaSyBaLGcjO6a4vfgZSMXeozjhuFB5zQ1YyZo'
 
@@ -170,7 +171,6 @@ def edit_checklist(sampling_event):
     checklist['observation_date'] = checklist['observation_date'].strftime('%Y-%m-%d') if checklist['observation_date'] else ""
     checklist['time_started'] = checklist['time_started'].strftime('%I:%M') if checklist['time_started'] else ""
     sightings = db(db.sightings.sampling_event == sampling_event).select().as_list()    
-    # print(json.dumps(sightings))
     return dict(get_species_url = URL('get_species', signer=url_signer),
                 edit_checklist_sightings_url = URL('edit_checklist_sightings', signer=url_signer),
                 checklist = json.dumps(checklist),
@@ -347,43 +347,81 @@ def get_species_data():
     
     return json(data)
 
-@action('user_stats/<path:path>', method=['POST', 'GET'])
-@action('user_stats', method=['POST', 'GET'])
-@action.uses('user_stats.html', db, auth)
-def user_stats(path=None):
-    user_email = get_user_email()
-    # joins the tables and gets the sightings from this user specifically
-    query = (db.checklists.observer_id == user_email) & (db.sightings.checklist_id == db.checklists.id)
-
-    # FOR DEBUGGING
-    #query = (db.sightings.common_name == "American Crow") # test query
-    #print("query: ", query)
-    #rows = db(query).select()
-    #print(f"Rows count: {len(rows)} \n {rows}")
-
-    # grid for displaying user stats
-    grid = Grid(path,
-        formstyle=FormStyleBulma,
-        grid_class_style=GridClassStyleBulma,
-        query=query,
-        search_queries=[ # allows for better searching with specific filters 
-            ['Search by Species', lambda val: db.sightings.common_name.contains(val)],
-            ['Search by Observation Count', lambda val: db.sightings.observation_count == int(val)],
-            ['Search by Date (YYYY-MM-DD)', lambda val: db.checklists.observation_date == val],
-            ['Search by Latitude', lambda val: (db.checklists.latitude >= float(val) - 1) & (db.checklists.latitude <= float(val) + 1)], # allows a +-1 buffer when filtering
-            ['Search by Longitude', lambda val: (db.checklists.longitude >= float(val) - 1) &(db.checklists.longitude <= float(val) + 1)],
-        ],
-        fields=[
-            db.sightings.common_name,
-            db.sightings.observation_count,
-            db.checklists.observation_date,
-            db.checklists.latitude,
-            db.checklists.longitude,
-        ],
-        orderby=[db.sightings.common_name],
-        editable=False,
-        deletable=False,
-        details=False,
+@action('user_stats') # renders all URLs for user_stats page
+@action.uses('user_stats.html', db, auth.user, url_signer)
+def user_stats():
+    return dict(
+        get_user_statistics_url=URL('get_user_statistics'),
+        search_url=URL('search'),
+        get_locations_url=URL('get_locations'),
+        google_maps_api_key=GOOGLE_MAPS_API_KEY
     )
 
-    return dict(grid=grid)
+@action('get_user_statistics') # gets all neccessary sighting data
+@action.uses(db, auth.user, url_signer)
+def get_user_statistics():
+    user_email = get_user_email()
+
+    # Selects common_name, total_count, observation date and time for the current user's checklists and sightings
+    common_names = db(
+        (db.sightings.checklist_id == db.checklists.id) & 
+        (db.checklists.observer_id == user_email)
+    ).select(
+        db.sightings.common_name,
+        db.sightings.observation_count.sum().with_alias('total_count'), # sums the total observations of a species and puts it in total_count
+        db.checklists.observation_date,
+        db.checklists.time_started,
+        groupby=db.sightings.common_name
+    ).as_list()
+
+    for name in common_names:
+        name['total_count'] = name['total_count'] if name['total_count'] is not None else 0
+
+    return dict(common_names=common_names)
+
+
+@action('search', method=["POST"]) # applies search filter based on name (doesnt have to be exact ie: 'Amer' will include American Crow and American Robin etc.)
+@action.uses(db, auth.user, url_signer)
+def search():
+    data = request.json
+    q = data.get("params", {}).get("q")
+
+    user_email = get_user_email()
+
+    query = (db.sightings.observation_count > 0) & (db.sightings.checklist_id == db.checklists.id) & (db.checklists.observer_id == user_email)
+    
+    if q:
+        query &= (db.sightings.common_name.contains(q))
+
+    common_names = db(query).select(
+        db.sightings.common_name,
+        db.sightings.observation_count.sum().with_alias('total_count'),
+        db.checklists.observation_date,
+        db.checklists.time_started,
+        orderby=db.checklists.observation_date,  # sorts by the first observed date (oldest first)
+        groupby=db.sightings.common_name,
+        distinct=True
+    ).as_list()
+
+    return dict(common_names=common_names)
+
+
+@action('get_locations', method=["POST"]) # gets the locations of the bird species
+@action.uses(db, auth.user, url_signer)
+def get_locations():
+    data = request.json
+    common_name = data.get("common_name")
+    if not common_name:
+        return dict(locations=[])
+
+    user_email = get_user_email()
+
+    # gets entries based on the user and species name
+    query = (db.sightings.common_name == common_name) & (db.sightings.sampling_event == db.checklists.sampling_event) & (db.checklists.observer_id == user_email)
+
+    locations = db(query).select( # gets latitude and longtitude from entries
+        db.checklists.latitude,
+        db.checklists.longitude
+    ).as_list()
+
+    return dict(locations=locations)
