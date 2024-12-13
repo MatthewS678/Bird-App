@@ -276,58 +276,53 @@ def get_contacts():
 def location():
     return dict(bounds=json.dumps(request.query))  # Update with the actual data you need
 
-@action('get_region_stats', method='POST')
-@action.uses(db)
+@action('get_region_stats', method=['POST'])
+@auth.requires_login()
 def get_region_stats():
-    # Extract coordinates and radius from request
-    lat = request.json.get('latitude')
-    lng = request.json.get('longitude')
-    radius = request.json.get('radius', 1.0)  # Optional, default to 1 km radius
+    print("PLEASE WORK")
+    try:
+        # Get the latitude, longitude, and radius (or bounding rectangle) from the request
+        request_data = request.json
+        southwest = request_data.get("southwest")
+        northeast = request_data.get("northeast")
+        
+        # Query the database for checklists within the bounding rectangle
+        checklists = db((db.checklists.latitude >= southwest["lat"]) &
+                        (db.checklists.latitude <= northeast["lat"]) &
+                        (db.checklists.longitude >= southwest["lng"]) &
+                        (db.checklists.longitude <= northeast["lng"])).select()
 
-    # Define the bounding box (approximation) for region search
-    lat_min = lat - radius / 111  # Convert km to degree approx.
-    lat_max = lat + radius / 111
-    lng_min = lng - radius / (111 * abs(math.cos(math.radians(lat))))
-    lng_max = lng + radius / (111 * abs(math.cos(math.radians(lat))))
+        # Extract region statistics
+        species_stats = {}
+        contributors = {}
+        for checklist in checklists:
+            sightings = db(db.sightings.checklist_id == checklist.id).select()
+            for sighting in sightings:
+                species = sighting.common_name
+                count = sighting.observation_count
 
-    # Query species and sightings in the region
-    species_query = db(
-        (db.checklists.latitude > lat_min) & (db.checklists.latitude < lat_max) &
-        (db.checklists.longitude > lng_min) & (db.checklists.longitude < lng_max) &
-        (db.sightings.sampling_event == db.checklists.sampling_event)
-    ).select(db.sightings.common_name, db.sightings.observation_count, db.checklists.observer_id)
+                if species not in species_stats:
+                    species_stats[species] = {"checklists": 0, "sightings": 0}
+                species_stats[species]["checklists"] += 1
+                species_stats[species]["sightings"] += count
 
-    # Aggregate species data
-    species_data = {}
-    for sighting in species_query:
-        species_name = sighting.sightings.common_name
-        count = sighting.sightings.observation_count
-        if species_name not in species_data:
-            species_data[species_name] = {'count': 0, 'checklists': 0}
-        species_data[species_name]['count'] += count
-        species_data[species_name]['checklists'] += 1
+            # Track contributors
+            observer = checklist.observer_id
+            if observer not in contributors:
+                contributors[observer] = 0
+            contributors[observer] += 1
 
-    # Aggregate top contributors
-    contributors_query = db(
-        (db.checklists.latitude > lat_min) & (db.checklists.latitude < lat_max) &
-        (db.checklists.longitude > lng_min) & (db.checklists.longitude < lng_max)
-    ).select(db.checklists.observer_id)
+        # Format top contributors
+        top_contributors = [{"name": k, "contributions": v} for k, v in sorted(contributors.items(), key=lambda item: item[1], reverse=True)[:5]]
 
-    contributors_data = {}
-    for checklist in contributors_query:
-        observer_id = checklist.checklists.observer_id
-        if observer_id not in contributors_data:
-            contributors_data[observer_id] = 0
-        contributors_data[observer_id] += 1
-
-    # Sort contributors by the number of checklists
-    top_contributors = sorted(contributors_data.items(), key=lambda x: x[1], reverse=True)
-
-    # Return the region data
-    return dict(
-        species_data=species_data,
-        top_contributors=top_contributors
-    )
+        # Prepare the response
+        response_data = {
+            "species": [{"name": k, "checklists": v["checklists"], "sightings": v["sightings"]} for k, v in species_stats.items()],
+            "topContributors": top_contributors,
+        }
+        return json.dumps(response_data)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
 
 @action('get_species_data')
 @action.uses(db)
