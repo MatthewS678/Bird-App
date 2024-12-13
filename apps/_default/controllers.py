@@ -55,13 +55,6 @@ def index():
         get_densities_url = URL('get_densities', signer=url_signer)
     )
 
-@action('location')
-@action.uses('location.html', db, auth, url_signer)
-def location():
-    # Any data you need to pass to the template
-    return dict(some_data='value')  # Update with the actual data you need
-
-
 @action('my_callback')
 @action.uses() # Add here things like db, auth, etc.
 def my_callback():
@@ -250,7 +243,7 @@ def edit_checklist_sightings():
 
 @action('get_densities')
 @action.uses(db)
-def get_contacts():
+def get_densities():
     bird_name = request.query.get('bird_name', '')
     if bird_name == '':
         events = db(db.checklists.sampling_event == db.sightings.sampling_event).select(
@@ -277,6 +270,11 @@ def get_contacts():
         for row in events
     ]
     return dict(events=event_list)
+
+@action('location')
+@action.uses('location.html', db, auth, url_signer)
+def location():
+    return dict(bounds=json.dumps(request.query))  # Update with the actual data you need
 
 @action('get_region_stats', method='POST')
 @action.uses(db)
@@ -352,6 +350,7 @@ def get_species_data():
 def user_stats():
     return dict(
         get_user_statistics_url=URL('get_user_statistics'),
+        get_species_url = URL('get_species'),
         search_url=URL('search'),
         get_locations_url=URL('get_locations'),
         google_maps_api_key=GOOGLE_MAPS_API_KEY

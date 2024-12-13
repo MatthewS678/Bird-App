@@ -8,12 +8,22 @@ app.data = {
             common_names: [],
             query: "",  // search term for species
             map: null,
-            markers: []
+            markers: [],
+            drop: false,
+            species: []
         };
+    },
+    computed: {
+        auto_completed: function() {
+            return this.species.filter(bird_name => 
+                bird_name.toLowerCase().includes(this.query.toLowerCase())
+            );
+        }
     },
     methods: {
         search: function () { // gets names filtered by the query
             let self = this;
+            self.drop = false;
             axios.post(search_url, { params: { q: self.query} })
                 .then(function (response) {
                     self.common_names = response.data.common_names;
@@ -60,7 +70,11 @@ app.data = {
                     opacity: 0.6
                 });
             }
-        }
+        },
+        select_bird: function(bird_name) {
+            this.query=bird_name; 
+            this.drop=false;
+        },
     },
     
     mounted: function () {
@@ -72,4 +86,15 @@ app.data = {
     }
 };
 
+
 app.vue = Vue.createApp(app.data).mount("#app");
+
+
+app.load_data = function () {
+    axios.get(get_species_url).then(function (r) {
+        app.vue.species = r.data.species;
+    });
+
+}
+
+app.load_data();

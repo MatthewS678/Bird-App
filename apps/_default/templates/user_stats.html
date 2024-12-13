@@ -40,7 +40,23 @@
   <!-- Search Bar -->
   <div class="field is-grouped">
     <div class="control is-three-quarters">
-      <input class="input" type="text" v-model="query" placeholder="Search bird species">
+      <div class="dropdown" :class="{ 'is-active': query && drop}">
+        <div class="dropdown-trigger">
+          <input 
+            class="input"
+            type="text"
+            placeholder="Search for bird..."
+            v-model="query"
+            @focus="drop=true"
+            @blur="drop=false"
+          ></span>
+        </div>
+        <div class="dropdown-menu" id="dropdown-menu" role="menu" @focusout="drop=false">
+          <div class="dropdown-content" v-for="bird_name in auto_completed">
+            <div @mousedown="select_bird(bird_name)" class="dropdown-item">{{ bird_name }}</div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="control">
       <button class="button is-primary" @click="search">Search</button>
@@ -74,6 +90,7 @@
   let get_user_statistics_url = "[[=XML(get_user_statistics_url)]]";
   let search_url = "[[=XML(search_url)]]";
   let get_locations_url = "[[=XML(get_locations_url)]]";
+  let get_species_url = "[[=XML(get_species_url)]]";
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=[[=google_maps_api_key]]"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=[[=google_maps_api_key]]&libraries=visualization"></script>

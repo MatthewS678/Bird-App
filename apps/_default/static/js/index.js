@@ -8,8 +8,9 @@
 let app = {};
 let map;
 let heatmap;
-let drawnRectangles = [];
-let markers = [];
+let rectangle;
+let marker;
+let drawingManager
 
 async function initMap() {
     const { Map } = await google.maps.importLibrary("maps");
@@ -17,10 +18,11 @@ async function initMap() {
     const { HeatmapLayer } = await google.maps.importLibrary("visualization");
     const { DrawingManager } = await google.maps.importLibrary("drawing");
     map = new Map(document.getElementById("map"), {
-        center: { lat: 0, lng: 0 },   //Santa Cruz Coordinates
+        center: { lat: 36.9741, lng: -122.0308 },  // defaults to Santa Cruz
         zoom: 13,
         mapId: "978da9b8cd8f4e30"
     });
+    
     heatmap = new HeatmapLayer({
         maxIntensity: 200,
         map: map
@@ -28,7 +30,6 @@ async function initMap() {
 
     app.data.methods.center_map();
 
-    let marker;
     map.addListener("dblclick", (e) => {
         // Log the coordinates of the double-click
         const latLng = e.latLng;
@@ -45,12 +46,9 @@ async function initMap() {
             position: latLng
         });
 
-        // Add to markers array
-        markers.push(marker);
 
         // Add listener to open checklist page on marker click
         marker.addListener("click", () => {
-            console.log(markers)
             const position = { lat: marker.position.lat, lng: marker.position.lng };
             console.log(position);
             app.data.methods.add_checklist(position);  // Navigate to checklist page
@@ -71,6 +69,7 @@ app.data = {
             query : "",
             drop : true,
             bird_filter : "",
+            loading: true
         };
     },
 
@@ -96,9 +95,27 @@ app.data = {
         add_checklist: function(position) {
             window.location.href = "/add_checklist?latitude=" + position.lat +"&longitude=" + position.lng  
         },
+        check_empty: function() {
+            if(this.query === "") {
+                this.loading = true
+                let self = this
+                axios.get(get_densities_url).then(function (r) {
+                    for (var event of r.data.events) {
+                        self.densities.push({
+                            location: new google.maps.LatLng(event.lat, event.lng),
+                            weight: event.count
+                        })
+                    }
+                    heatmap.setData(self.densities)
+                    self.loading = false;
+                });
+            }
+        },
 
         update_heatmap: function() {
+            let self = this
             if (this.species.some(name => name.toLowerCase() == this.query.toLowerCase())) {
+                self.loading = true;
                 axios.get(get_densities_url, {
                     params: { bird_name: this.query }
                 }).then(function(r) {
@@ -110,6 +127,7 @@ app.data = {
                         })
                     }
                     heatmap.setData(data)
+                    self.loading = false;
                 });
             }
         },
@@ -121,43 +139,57 @@ app.data = {
         },
 
         activateRectangleDrawing: function() {
-            // Initialize the DrawingManager only when the "Create Region" button is clicked
-            const drawingManager = new google.maps.drawing.DrawingManager({
+            if (drawingManager) return;
+            drawingManager = new google.maps.drawing.DrawingManager({
                 map: map,
                 drawingMode: google.maps.drawing.OverlayType.RECTANGLE, // Set to rectangle mode
                 rectangleOptions: {
                     editable: true, // Allows editing of the rectangle
                     draggable: true // Allows dragging of the rectangle
+                },
+                drawingControl: true, // Enable drawing control
+                drawingControlOptions: {
+                    position: google.maps.ControlPosition.TOP_CENTER, // Position of the drawing control
+                    drawingModes: [google.maps.drawing.OverlayType.RECTANGLE] // Only rectangle mode enabled
                 }
             });
 
-            google.maps.event.addListener(drawingManager, 'rectanglecomplete', function(rectangle) {
-                console.log('Rectangle drawn:', rectangle);
-                // Store the drawn rectangle in the array
-                drawnRectangles.push(rectangle); 
-                console.log(drawnRectangles);
-                const bounds = rectangle.getBounds();
-                console.log('Rectangle bounds:', bounds.toString()); // Log the bounds
+            google.maps.event.addListener(drawingManager, 'overlaycomplete', (event) => {
+                // Check if the overlay is a rectangle
+                if (event.type === google.maps.drawing.OverlayType.RECTANGLE) {
+                    // Remove the existing rectangle if any
+                    if (rectangle) {
+                        rectangle.setMap(null);
+                    }
+                    // Save the new rectangle
+                    rectangle = event.overlay;
+                    console.log(rectangle)
+                    
+                    // Optionally, stop the drawing mode to prevent continuous drawing
+                    drawingManager.setDrawingMode(null);
+                }
             });
         },
 
         clearMap: function() {
             // Clear the drawn rectangles
-            drawnRectangles.forEach(rectangle => {
-                rectangle.setMap(null); // Remove each rectangle from the map
-            });
-            drawnRectangles = []; // Clear the array of rectangles
+            if (rectangle) rectangle.setMap(null);
             
             // Clear markers
-            markers.forEach(marker => {
-                marker.setMap(null)
-            });
-            markers = [];
+            if (marker) marker.setMap(null)
+
+            console.log(rectangle)
+            console.log(marker)
         },
         
         viewRegionInfo: function() {
             // Navigate to location.html when button is clicked
-            window.location.href = "/location"; // Adjust the path if necessary
+            let bounds = rectangle.getBounds();
+            console.log(bounds.Gh.lo)
+            if(rectangle && rectangle.map) window.location.href = "/location?latLow=" + bounds.ei.lo + "&latHigh=" + bounds.ei.hi + "&longLow=" + bounds.Gh.lo + "&longHigh=" + bounds.Gh.hi; 
+            
+
+
         },
     },
 };
@@ -165,6 +197,7 @@ app.data = {
 app.vue = Vue.createApp(app.data).mount("#app");
 
 app.load_data = function () {
+    app.vue.loading = true;
     axios.get(get_species_url).then(function (r) {
         app.vue.species = r.data.species;
     });
@@ -176,7 +209,9 @@ app.load_data = function () {
             })
         }
         heatmap.setData(app.vue.densities)
+        app.vue.loading = false
     });
+
 }
 
 app.load_data();

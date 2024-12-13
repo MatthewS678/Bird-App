@@ -6,7 +6,6 @@
 }
 </style>
 
-[[block 'content']]
     <div id="app">
         <div>
             <h1>Region Information</h1>
@@ -39,5 +38,10 @@
         </div>
     </div>
 
-    <script src="location.js"></script>
-[[end]]
+    [[block page_scripts]]
+    <script>
+        let bounds = JSON.parse('[[=XML(bounds)]]');
+        console.log(bounds)
+      </script>
+    <script src="js/location.js"></script>
+    [[end]]
