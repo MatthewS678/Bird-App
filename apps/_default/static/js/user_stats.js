@@ -12,7 +12,7 @@ app.data = {
         };
     },
     methods: {
-        search: function () { // gets names filtered by the query and sorted oldest first
+        search: function () { // gets names filtered by the query
             let self = this;
             axios.post(search_url, { params: { q: self.query} })
                 .then(function (response) {

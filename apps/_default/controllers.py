@@ -398,7 +398,7 @@ def search():
         db.sightings.observation_count.sum().with_alias('total_count'),
         db.checklists.observation_date,
         db.checklists.time_started,
-        orderby=db.checklists.observation_date,  # sorts by the first observed date (oldest first)
+        orderby=db.checklists.observation_date,
         groupby=db.sightings.common_name,
         distinct=True
     ).as_list()
