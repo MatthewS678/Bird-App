@@ -55,13 +55,6 @@ def index():
         get_densities_url = URL('get_densities', signer=url_signer)
     )
 
-@action('location')
-@action.uses('location.html', db, auth, url_signer)
-def location():
-    # Any data you need to pass to the template
-    return dict(some_data='value')  # Update with the actual data you need
-
-
 @action('my_callback')
 @action.uses() # Add here things like db, auth, etc.
 def my_callback():
@@ -277,6 +270,11 @@ def get_contacts():
         for row in events
     ]
     return dict(events=event_list)
+
+@action('location')
+@action.uses('location.html', db, auth, url_signer)
+def location():
+    return dict(bounds=json.dumps(request.query))  # Update with the actual data you need
 
 @action('get_region_stats', method='POST')
 @action.uses(db)

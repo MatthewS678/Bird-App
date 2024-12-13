@@ -8,54 +8,56 @@
 
 
 <div class="section" id="app" v-cloak>
-  <h3>Click on the map to enter a checklist!</h3>
-  <h3>Draw a rectangle over a region you wish to see statistics on!</h3>
-  
-  <div class="dropdown" :class="{ 'is-active': query && drop}">
-    <div class="dropdown-trigger">
-      <input 
-        class="input"
-        type="text"
-        placeholder="Search for bird..."
-        v-model="query"
-        @keydown.enter="update_heatmap"
-        @click="drop=true"
-      ></span>
-    </div>
-    <div class="dropdown-menu" id="dropdown-menu" role="menu">
-      <div class="dropdown-content" v-for="bird_name in auto_completed">
-        <div @click="select_bird(bird_name)" class="dropdown-item">{{ bird_name }}</div>
-      </div>
-    </div>
-  </div>
 
-  <div class="columns">
+  <div class="columns is-centered">
     <div class="column is-8" style="position: relative;">
-      <div id="map" style="width: 100%; height: 500px;"></div>
+      <div id="map" style="width: 100%; height: 50vh;"></div>
     </div>
 
-    <div class="column is-4">
+    <div class="column is-one-third">
       <div class="box-container">
+        <div class="box">
+          <label class="label">Welcome to Bird Watching!</label>
+          <div class="field">
+            <p>Bird Watching allows for people to view bird location data and see trends and behaviours of different species of birds</p>
+            <br>
+            <p>To get started, create an account in the top right of the navigation bar</p>
+            <br>
+            <p>To create a new checklist and add sightings, double click anywhere on the map. A marker will be placed at that location, and clicking the marker will allow you to enter checklist and sighting data</p>
+            <br>
+            <p>To view statistics on a region, click the "Create Region" button below. Drawing controls should appear at the top of the map, where you can draw a rectangle and resize/drag until desired. Click the "Region Informationd" button to view the statistics of that region in the box</p>
+          </div>
+        </div>
         <div class="box">
           <label class="label">Map Options</label>
           <div class="field">
             <button id="create-region" class="button is-success" @click="activateRectangleDrawing">Create Region</button>
             <button id="region-info" class="button is-primary" @click="viewRegionInfo">Region Information</button>
-            <button id="enter-checklist" class="button is-info" @click="enterChecklist">Enter Checklist</button>
             <button id="clear-map" class="button is-danger" @click="clearMap">Clear Map</button>
           </div>
         </div>
 
         <div class="box">
           <label class="label">Map Filter</label>
+          <label>Filter by Species:</label>
           <div class="field">
-            <label>Filter by Species:</label>
-            <div class="control">
-              <select id="species" v-model="selectedSpecies" @change="loadHeatMap">
-                <option v-for="species in speciesList" :key="species.id" :value="species.id">
-                  {{ species.name }}
-                </option>
-              </select>
+            
+            <div class="dropdown" :class="{ 'is-active': query && drop}">
+              <div class="dropdown-trigger">
+                <input 
+                  class="input"
+                  type="text"
+                  placeholder="Search for bird..."
+                  v-model="query"
+                  @keydown.enter="update_heatmap"
+                  @click="drop=true"
+                ></span>
+              </div>
+              <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                <div class="dropdown-content" v-for="bird_name in auto_completed">
+                  <div @click="select_bird(bird_name)" class="dropdown-item">{{ bird_name }}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
