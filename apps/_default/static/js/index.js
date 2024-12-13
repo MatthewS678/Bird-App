@@ -185,11 +185,13 @@ app.data = {
         viewRegionInfo: function() {
             // Navigate to location.html when button is clicked
             let bounds = rectangle.getBounds();
-            console.log(bounds.Gh.lo)
-            if(rectangle && rectangle.map) window.location.href = "/location?latLow=" + bounds.ei.lo + "&latHigh=" + bounds.ei.hi + "&longLow=" + bounds.Gh.lo + "&longHigh=" + bounds.Gh.hi; 
-            
+            if (rectangle && rectangle.map) {
+                const southwest = bounds.getSouthWest();
+                const northeast = bounds.getNorthEast();
 
-
+                window.location.href = "/location?latLow=" + southwest.lat() + "&longLow=" + southwest.lng() +
+                    "&latHigh=" + northeast.lat() + "&longHigh=" + northeast.lng();
+            }
         },
     },
 };
