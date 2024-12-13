@@ -19,7 +19,7 @@ const app = Vue.createApp({
             }
 
             // Send coordinates to the backend
-            axios.post('/get_region_stats', {
+            axios.get('/get_region_stats', {
                 southwest: this.rectangleCoordinates.southwest,
                 northeast: this.rectangleCoordinates.northeast,
             }).then(response => {
