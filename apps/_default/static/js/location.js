@@ -16,7 +16,6 @@ const app = Vue.createApp({
     },
     methods: {
         // Fetch region data based on coordinates
-        // Fetch region data based on coordinates
         showRegionInfo() {
             console.log(this.rectangleCoordinates);
             if (!this.rectangleCoordinates) {
@@ -29,6 +28,7 @@ const app = Vue.createApp({
                 southwest: this.rectangleCoordinates.southwest,
                 northeast: this.rectangleCoordinates.northeast,
             }).then(response => {
+                console.log(response.data)
                 this.regionInfo = response.data;
             }).catch(error => {
                 console.error('Error fetching region info:', error);
