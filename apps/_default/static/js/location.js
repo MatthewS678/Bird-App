@@ -1,5 +1,4 @@
 let app = {}
-
 app.data = {
     data: function() {
         return {
@@ -11,7 +10,8 @@ app.data = {
             latHigh: null,
             longHigh: null,
             query: "",
-            checklists:[]
+            checklists:[],
+            chart: null
         };
     },
     methods: {
@@ -22,12 +22,58 @@ app.data = {
         showGraph: function() {
             console.log(this.query)
             axios.post('/get_species_data', { species_name: this.query, checklists : this.checklists }).then(response => {
-                const data = response.data;
+                let data = response.data.sightings;
+                this.update_chart(data);
                 console.log(response.data.sightings)
             }).catch(error => {
                 console.error('Error fetching species graph data:', error);
             });
         },
+        update_chart: function(data) {
+            //Aggregate data
+            const aggregatedData = data.reduce((acc, curr) => {
+                if (acc[curr.observation_date]) {
+                    acc[curr.observation_date] += curr.observation_count;
+                } else {
+                    acc[curr.observation_date] = curr.observation_count;
+                }
+                return acc;
+                }, {});
+
+                const sortedData = Object.keys(aggregatedData)
+                .sort() // Sort the keys (dates) in ascending order
+                .reduce((acc, key) => {
+                    acc[key] = aggregatedData[key];
+                return acc;
+            }, {});  
+
+            const sortedDates = Object.keys(aggregatedData).sort(); // Sort dates
+            const sortedCounts = sortedDates.map(date => aggregatedData[date]); // Get the corresponding counts
+            console.log(sortedDates)
+            console.log(sortedCounts)
+            const ctx = document.getElementById('graph');
+            console.log(this.chart)
+            if(this.chart) {
+                this.chart.destroy()
+                setTimeout(() => {}, 50);
+            }
+            this.chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedDates,
+                    datasets: [{
+                        label: 'Observation Count',
+                        data: sortedCounts
+                    }]
+                },
+                options: {
+                    animation: {
+                        duration: 100
+                    }
+                }
+            })
+            this.chart.save
+        }
     },
 };
 
