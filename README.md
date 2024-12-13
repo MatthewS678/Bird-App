@@ -10,7 +10,7 @@ you can enter the link given to you (should be: http://127.0.0.1:8000) into your
 ### Index Page
 
 The welcoming page that houses the map and allows creating checklists from the map. To create a checklist, double click on a point on
-the map to drop a pin and then click on the dropped pin to create your checklist. Fill in the details of your sightings in the checklist and press submit when done.
+the map to drop a pin and then click on the dropped pin to create your checklist. Fill in the details of your sightings in the checklist and press submit when done. Other pages and account info can be accessed by hovering the drop down in the upper right corner of the website screen.
 
 ### Checklist Page
 
