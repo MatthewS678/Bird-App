@@ -7,9 +7,15 @@ const app = Vue.createApp({
             longLow: null,
             latHigh: null,
             longHigh: null,
+            rectangleCoordinates: null, // Store the rectangle's coordinates
+            latLow: null,
+            longLow: null,
+            latHigh: null,
+            longHigh: null,
         };
     },
     methods: {
+        // Fetch region data based on coordinates
         // Fetch region data based on coordinates
         showRegionInfo() {
             console.log(this.rectangleCoordinates);
@@ -28,6 +34,8 @@ const app = Vue.createApp({
                 console.error('Error fetching region info:', error);
             });
         },
+
+        // Show the species graph based on selection
 
         // Show the species graph based on selection
         showGraph(species) {

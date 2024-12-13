@@ -243,7 +243,7 @@ def edit_checklist_sightings():
 
 @action('get_densities')
 @action.uses(db)
-def get_contacts():
+def get_densities():
     bird_name = request.query.get('bird_name', '')
     if bird_name == '':
         events = db(db.checklists.sampling_event == db.sightings.sampling_event).select(
@@ -357,6 +357,7 @@ def get_species_data():
 def user_stats():
     return dict(
         get_user_statistics_url=URL('get_user_statistics'),
+        get_species_url = URL('get_species'),
         search_url=URL('search'),
         get_locations_url=URL('get_locations'),
         google_maps_api_key=GOOGLE_MAPS_API_KEY
