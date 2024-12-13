@@ -50,7 +50,8 @@ async function initMap() {
 
         // Add listener to open checklist page on marker click
         marker.addListener("click", () => {
-            const position = { lat: marker.position.lat(), lng: marker.position.lng() };
+            console.log(markers)
+            const position = { lat: marker.position.lat, lng: marker.position.lng };
             console.log(position);
             app.data.methods.add_checklist(position);  // Navigate to checklist page
         });
