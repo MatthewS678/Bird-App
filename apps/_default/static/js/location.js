@@ -3,6 +3,8 @@ const app = Vue.createApp({
         return {
             regionInfo: null,
             rectangleCoordinates: null, // Store the rectangle's coordinates
+            map: null, // Store the map instance
+            drawingManager: null, // Store the drawing manager instance
             latLow: null,
             longLow: null,
             latHigh: null,
@@ -28,27 +30,27 @@ const app = Vue.createApp({
                 console.error('Error fetching region info:', error);
             });
         },
-
+        
         // Show the species graph based on selection
         showGraph(species) {
-            axios.post('/get_species_data', { species_name: species.name }).then(response => {
+            axios.post('/get_species_data', { species: species.name }).then(response => {
                 const data = response.data;
 
                 const svg = d3.select("#graph").html("").append("svg")
-                    .attr("width", "100%")
+                    .attr("width", 500)
                     .attr("height", 300);
 
                 const x = d3.scaleTime()
-                    .domain(d3.extent(data.dates, d => new Date(d)))
-                    .range([0, svg.node().getBoundingClientRect().width]);
+                    .domain(d3.extent(data, d => new Date(d.date)))
+                    .range([0, 480]);
 
                 const y = d3.scaleLinear()
-                    .domain([0, d3.max(data.sightings)])
+                    .domain([0, d3.max(data, d => d.count)])
                     .range([280, 0]);
 
                 const line = d3.line()
-                    .x(d => x(new Date(d)))
-                    .y(d => y(d));
+                    .x(d => x(new Date(d.date)))
+                    .y(d => y(d.count));
 
                 svg.append("g")
                     .attr("transform", "translate(0, 280)")
@@ -58,7 +60,7 @@ const app = Vue.createApp({
                     .call(d3.axisLeft(y));
 
                 svg.append("path")
-                    .datum(data.sightings.map((s, i) => ({ date: data.dates[i], count: s })))
+                    .datum(data)
                     .attr("fill", "none")
                     .attr("stroke", "steelblue")
                     .attr("stroke-width", 1.5)
@@ -66,6 +68,32 @@ const app = Vue.createApp({
             }).catch(error => {
                 console.error('Error fetching species graph data:', error);
             });
+        },
+
+        // Handle rectangle drawn on the map
+        handleRectangleDrawn(rectangle) {
+            const bounds = rectangle.getBounds();
+            this.rectangleCoordinates = {
+                southwest: {
+                    lat: this.latLow,
+                    lng: this.longLow
+                },
+                northeast: {
+                    lat: this.latHigh,
+                    lng: this.longHigh
+                }
+            };
+
+            // Store the coordinates in sessionStorage
+            sessionStorage.setItem('rectangleCoordinates', JSON.stringify(this.rectangleCoordinates));
+        },
+
+        loadRectangleCoordinates() {
+            // Load coordinates from sessionStorage if available
+            const storedCoordinates = sessionStorage.getItem('rectangleCoordinates');
+            if (storedCoordinates) {
+                this.rectangleCoordinates = JSON.parse(storedCoordinates);
+            }
         },
 
         // Fetch coordinates from URL query parameters
@@ -91,7 +119,35 @@ const app = Vue.createApp({
     mounted() {
         // Fetch coordinates from the URL
         this.getCoordinatesFromURL();
+        // Initialize the map
+        this.loadRectangleCoordinates();
+        initMap(this); // Pass Vue app instance to initMap
     }
 });
+
+// Initialize the map and drawing manager after the Google Maps API is loaded
+async function initMap(vueApp) {
+    const { Map } = await google.maps.importLibrary("maps");
+    const { DrawingManager } = await google.maps.importLibrary("drawing");
+
+    vueApp.map = new Map(document.getElementById("map"), {
+        center: { lat: vueApp.latLow, lng: vueApp.longLow }, // Center map on the southwest corner
+        zoom: 10,
+        mapId: "978da9b8cd8f4e30"
+    });
+
+    vueApp.drawingManager = new google.maps.drawing.DrawingManager({
+        map: vueApp.map,
+        drawingMode: google.maps.drawing.OverlayType.RECTANGLE,
+        rectangleOptions: {
+            editable: true,
+            draggable: true
+        }
+    });
+
+    google.maps.event.addListener(vueApp.drawingManager, 'rectanglecomplete', rectangle => {
+        vueApp.handleRectangleDrawn(rectangle);
+    });
+}
 
 app.mount('#app'); // Mount Vue instance
