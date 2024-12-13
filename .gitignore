@@ -3,3 +3,4 @@ __pycache__/*
 apps/*/databases/*
 apps/.service/*
 !databases/README.md
+.env

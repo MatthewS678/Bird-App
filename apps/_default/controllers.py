@@ -37,9 +37,11 @@ from .models import get_user_email, get_user_id, generate_sampling_event_id
 from py4web.utils.form import Form, FormStyleBulma, TextareaWidget, FormStyleDefault
 from py4web.utils.grid import Grid, GridClassStyleBulma, Column
 from collections import defaultdict
+from dotenv import load_dotenv
+import os
 
-GOOGLE_MAPS_API_KEY = 'AIzaSyBaLGcjO6a4vfgZSMXeozjhuFB5zQ1YyZo'
-
+load_dotenv()
+GOOGLE_MAPS_API_KEY=(os.getenv('GOOGLE_MAPS_API_KEY'))
 url_signer = URLSigner(session)
 
 @action('index')
@@ -52,7 +54,8 @@ def index():
         get_species_url = URL('get_species', signer=url_signer),
         user_stats_url = URL('user_stats', signer=url_signer),
         my_checklists_url = URL('my_checklists', signer=url_signer),
-        get_densities_url = URL('get_densities', signer=url_signer)
+        get_densities_url = URL('get_densities', signer=url_signer),
+        google_maps_api_key=GOOGLE_MAPS_API_KEY
     )
 
 @action('my_callback')
