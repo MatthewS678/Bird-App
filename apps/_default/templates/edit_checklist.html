@@ -19,40 +19,39 @@
         <div class="column is-three-quarters">
             <div class="card">
                 <div class="card-header">
-                    <p class="card-header-title">Add Checklist</p>
+                    <p class="card-header-title">Edit Checklist</p>
                 </div>
                 <div class="card-content">
-                    <form @submit.prevent="submit_checklist_sightings()" onkeydown="return event.key !== 'Enter';">
+                    <form @submit.prevent="edit_checklist_sightings()" onkeydown="return event.key !== 'Enter';">
                     <div class="pb-5">
                         <p class="title is-5">Coordinates</p>
                         <div class="columns">
                             <div class="column">
-                                 <input name="latitude" class="input" required type="number" step=any placeholder="Latitude" v-model="latitude">
+                                 <input name="latitude" class="input" step=any required type="number" placeholder="Latitude" v-model="latitude">
                             </div>   
                             <div class="column">
-                                <input name="longitude" class="input" required type="number" step=any placeholder="Longitude" v-model="longitude">
+                                <input name="longitude" class="input" step=any required type="number" placeholder="Longitude" v-model="longitude">
                             </div>
                         </div>
                     </div>
                     <div class="pb-5">
                         <p class="title is-5">Observation Date</p>
-                        <input name="observation_date" class="input" type="date" v-model="observation_date" required>
+                        <input name="observation_date" required class="input" type="date" v-model="observation_date">
                     </div>
                     <div class="pb-5">
                         <p class="title is-5">Time</p>
-                        <input name="time" class="input" type="time" v-model="time_started" required>
+                        <input name="time" class="input" required type="time" v-model="time_started">
                     </div>
                     <div class="pb-5">
                         <p class="title is-5">Duration (Minutes)</p>
-                        <input name="duration" class="input" type="number" v-model="observation_duration" required>
+                        <input name="duration" class="input" required type="number" v-model="observation_duration">
                     </div>
                     <p class="title is-5">Sightings</p>
                     <div class="pb-5" v-for="(sighting, s_index) in sightings">
                         <div class="columns">
                             <div class="column">
-                                <!-- <input name="species_name" class="input" v-model="sighting.species_name" placeholder="Species"> -->
                                 <div class="select">
-                                    <select v-model="sighting.species_name">
+                                    <select v-model="sighting.common_name">
                                       <option v-for="common_name in species">{{common_name}}</option>
                                     </select>
                                   </div>
@@ -74,10 +73,9 @@
                         <button class="button is-success" type="button" @click="add_sighting()">+ Add Sighting</button>
                     </div>
                     <br>
-                    <button class="button is-success" @submit="submit_checklist_sightings()">Submit</button>
+                    <button class="button is-success" type="submit" @submit="edit_checklist_sightings()">Submit</button>
                 </div>
-            </form>
-                
+                </form>
             </div>
             
         </div>
@@ -86,9 +84,12 @@
 [[block page_scripts]]
 <script>
     let get_species_url = "[[=XML(get_species_url)]]";
-    let add_checklist_sightings_url = "[[=XML(add_checklist_sightings_url)]]";
-    let latitude = JSON.parse('[[=XML(latitude)]]') || 0;
-    let longitude = JSON.parse('[[=XML(longitude)]]') || 0;
+    let edit_checklist_sightings_url = "[[=XML(edit_checklist_sightings_url)]]";
+    let checklist = JSON.parse('[[=XML(checklist)]]');
+    let parser = new DOMParser();
+    //Weird work around because of apostrpohe in species name causing string to escape before string is finished
+    let sightings = JSON.parse(parser.parseFromString('[[=sightings]]', "text/html").documentElement.textContent);
+    
   </script>
-<script src="js/add_checklist.js"></script>
+<script src="js/edit_checklist.js"></script>
 [[end]]

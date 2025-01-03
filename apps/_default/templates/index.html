@@ -4,27 +4,97 @@
 [v-cloak] {
      display: none;
 }
+.dropdown-menu {
+       max-height: 30vh;
+       overflow:scroll; 
+
+
+
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
 </style>
 
 
 <div class="section" id="app" v-cloak>
-  <!-- Put here your Vue.js template -->
 
-  <!-- <div class="navbar">
-    <!-- Links to the other pages -->
-    <div>
-      <a href="[[=URL('my_checklists')]]">My Checklists</a> <!-- Link to checklist page/controller-->
-      <a href="[[=URL('user_stats')]]">Sighting Statistics</a> <!-- Link to user stats page/controller-->
+  <div class="columns is-centered">
+    <div class="column is-8" style="position: relative;">
+      <div id="map" style="width: 100%; height: 70vh;"></div>
+      <div v-if="loading" id="loading-overlay" style="
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;">
+        <div class="spinner"></div>
+      </div>
     </div>
-    <!-- Species searchbar -->
-    <div>
-      <input type="text" id="species-searchbar" placeholder="Select species..." autocomplete="off">
-    </div>
-  </div> -->
 
-  <h1 class="title"><i class="fa-solid fa-cube"></i> Title</h1>
-  
-  <div id="map" style="width: 100%; height: 500px;"></div>
+    <div class="column is-one-third">
+      <div class="box-container">
+        <div class="box">
+          <label class="label">Welcome to Bird Watching!</label>
+          <div class="field">
+            <p>Bird Watching allows for people to view bird location data and see trends and behaviours of different species of birds</p>
+            <br>
+            <p>To get started, create an account in the top right of the navigation bar</p>
+            <br>
+            <p>To create a new checklist and add sightings, double click anywhere on the map. A marker will be placed at that location, and clicking the marker will allow you to enter checklist and sighting data</p>
+            <br>
+            <p>To view statistics on a region, click the "Create Region" button below. Drawing controls should appear at the top of the map, where you can draw a rectangle and resize/drag until desired. Click the "Region Informationd" button to view the statistics of that region in the box</p>
+          </div>
+        </div>
+        <div class="box">
+          <label class="label">Map Options</label>
+          <div class="field">
+            <label>Filter by Species:</label>
+          <div class="field">
+            
+            <div class="dropdown" :class="{ 'is-active': query && drop}">
+              <div class="dropdown-trigger">
+                <input 
+                  class="input"
+                  type="text"
+                  placeholder="Search for bird..."
+                  v-model="query"
+                  @keydown.enter="update_heatmap"
+                  @focus="drop=true"
+                  @input="check_empty()"
+                ></span>
+              </div>
+              <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                <div class="dropdown-content" v-for="bird_name in auto_completed">
+                  <div @click="select_bird(bird_name)" class="dropdown-item">{{ bird_name }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+            <button id="create-region" class="button is-success" @click="activateRectangleDrawing">Create Region</button>
+            <button id="region-info" class="button is-primary" @click="viewRegionInfo">Region Information</button>
+            <button id="clear-map" class="button is-danger" @click="clearMap">Clear Map</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
 </div>
 
@@ -37,10 +107,29 @@
   let add_checklist_url = "[[=XML(add_checklist_url)]]";
   let my_checklists_url = "[[=XML(my_checklists_url)]]";
   let user_stats_url = "[[=XML(user_stats_url)]]";
+  let get_densities_url = "[[=XML(get_densities_url)]]";
 </script>
 <script>
-  (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
-    key: "***REDACTED***",
+  (g => {
+    var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window;
+    b = b[c] || (b[c] = {});
+    var d = b.maps || (b.maps = {}),
+      r = new Set(),
+      e = new URLSearchParams(),
+      u = () => h || (h = new Promise(async (f, n) => {
+        await (a = m.createElement("script"));
+        e.set("libraries", [...r, "drawing"].join(","));
+        for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]);
+        e.set("callback", c + ".maps." + q);
+        a.src = `https://maps.${c}apis.com/maps/api/js?` + e;
+        d[q] = f;
+        a.onerror = () => h = n(Error(p + " could not load."));
+        a.nonce = m.querySelector("script[nonce]")?.nonce || "";
+        m.head.append(a);
+      }));
+    d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n));
+  })({
+    key: "[[=google_maps_api_key]]",
     v: "weekly",
   });
 </script>

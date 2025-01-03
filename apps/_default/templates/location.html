@@ -1,0 +1,74 @@
+[[extend 'layout.html']]
+
+<style>
+[v-cloak] {
+    display: none;
+}
+#graph {
+    margin-top: 20px;
+    width: 100%;
+    height: 300px;
+}
+
+.species {
+    max-height: 40vh;
+    overflow:scroll; 
+}
+
+</style>
+
+<div id="app" class="section" v-cloak >
+    <h1 class="title is-3">Region Information</h1>
+    <div>
+        <div class="columns is-clipped">
+            <div class="column is-one-third">
+                <div class="box">
+                    <h2 class="title is-5">Species</h2>
+                    <div class="select">
+                        <select v-model="query" @change="showGraph()">
+                            <option :value="i.name" v-for="i in species">
+                                {{i.name}}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <div class="box">
+                    <div class="table-container">
+                        <h2 class="title is-5">Top Contributors</h2>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Contributor</th>
+                                    <th>Contributions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="contributor in topContributors">
+                                    <td>{{contributor.name}}</td>
+                                    <td>{{contributor.contributions}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <canvas id="graph"></canvas>
+            </div>
+        </div>
+    </div>
+    </div>
+        
+
+        
+</div>
+
+[[block page_scripts]]
+<script>
+    let get_region_stats_url = "[[=XML(get_region_stats_url)]]";
+    let get_species_stats_url = "[[=XML(get_species_stats_url)]]";
+</script>  
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="js/location.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+[[end]]

@@ -4,6 +4,7 @@ This file defines the database models
 
 import datetime
 import csv, os
+import uuid
 from .common import db, Field, auth
 from pydal.validators import *
 
@@ -17,21 +18,25 @@ def get_user_id():
 def get_time():
     return datetime.datetime.utcnow()
 
+def generate_sampling_event_id():
+    return "S" + str(uuid.uuid4())
+
 
 #tables to mimic csv file data
 db.define_table(
     'checklists',
-    Field('sampling_event', 'string', unique=True),
-    Field('latitude', 'double' ),
+    Field('sampling_event', 'string', unique=True, default=generate_sampling_event_id),
+    Field('latitude', 'double'),
     Field('longitude', 'double'),
-    Field('observation_date', 'date', default=datetime.date.today),
-    Field('time_started', 'time'),
-    Field('observer_id', 'string'),
-    Field('duration_minutes', 'integer')
+    Field('observation_date', 'date', default=datetime.date.today, required=IS_NOT_EMPTY()),
+    Field('time_started', 'time', required=IS_NOT_EMPTY()),
+    Field('observer_id', 'string', default =get_user_email),
+    Field('duration_minutes', 'integer', required=True)
 )
 
 db.define_table(
     'sightings',
+    Field('checklist_id', 'reference checklists'), #In order to automatically handle deletion of sampling_event
     Field('sampling_event', 'string'),
     Field('common_name', 'string' ),
     Field('observation_count', 'integer')

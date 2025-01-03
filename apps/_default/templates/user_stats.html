@@ -4,22 +4,95 @@
   [v-cloak] {
     display: none;
   }
+
+  #map {
+    width: 100%;
+    height: 400px;
+    margin-top: 20px;
+  }
+
+  .scrollable-list {
+    max-height: 200px;  
+    overflow-y: auto;    
+    margin-bottom: 20px; 
+    padding: 10px 0;
+  }
+
+  .species-item {
+    margin-bottom: 10px;
+  }
+
+  .button.is-fullwidth {
+    background-color: #00d1b2;  
+    color: white;
+    text-align: left;
+  }
+
+  .button.is-fullwidth:hover {
+    background-color: #00b89d;
+  }
 </style>
 
-
 <div class="section" id="app" v-cloak>
-    <div class="container">
-        <h1 class="title">Birdwatching Statistics</h1>
-        <div>
-          [[=grid]]
+  <h1 class="title">My Statistics</h1>
+  <p>Search for birds and see their observation data. Click on an entry to view its locations on the map.</p>
+  
+  <!-- Search Bar -->
+  <div class="field is-grouped">
+    <div class="control is-three-quarters">
+      <div class="dropdown" :class="{ 'is-active': query && drop}">
+        <div class="dropdown-trigger">
+          <input 
+            class="input"
+            type="text"
+            placeholder="Search for bird..."
+            v-model="query"
+            @focus="drop=true"
+            @blur="drop=false"
+          ></span>
         </div>
+        <div class="dropdown-menu" id="dropdown-menu" role="menu" @focusout="drop=false">
+          <div class="dropdown-content" v-for="bird_name in auto_completed">
+            <div @mousedown="select_bird(bird_name)" class="dropdown-item">{{ bird_name }}</div>
+          </div>
+        </div>
+      </div>
     </div>
+    <div class="control">
+      <button class="button is-primary" @click="search">Search</button>
+    </div>
+  </div>
+  
+  <!-- scrollable box to display all species queried for -->
+  <div class="scrollable-list">
+    <!-- If there are no results, display a "No results found" message -->
+    <div v-if="common_names.length === 0" class="no-results-message">
+      <p>No results found currently. Try searching for another species!</p>
+    </div>
+    <div class="species-item" v-for="(name, index) in common_names" :key="name.sightings.common_name">
+      <div @click="getLocations(name)">
+        <button class="button is-link is-fullwidth">
+          <span>{{ name.sightings.common_name }}</span>
+          <span style="margin-left: 5px; font-weight: normal; color: white;">
+            (Total Observations: {{ name.total_count || 'N/A' }}) 
+            (Last Seen On: {{ name.checklists.observation_date }} at {{ name.checklists.time_started }})
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div id="map"></div>
 </div>
 
 [[block page_scripts]]
-<!-- Loads the index-specific js for Vue -->
 <script>
+  let get_user_statistics_url = "[[=XML(get_user_statistics_url)]]";
+  let search_url = "[[=XML(search_url)]]";
+  let get_locations_url = "[[=XML(get_locations_url)]]";
+  let get_species_url = "[[=XML(get_species_url)]]";
 </script>
+<script src="https://maps.googleapis.com/maps/api/js?key=[[=google_maps_api_key]]"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=[[=google_maps_api_key]]&libraries=visualization"></script>
 <script src="js/user_stats.js"></script>
-
 [[end]]
